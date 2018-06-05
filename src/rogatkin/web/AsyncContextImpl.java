@@ -39,19 +39,13 @@ import Acme.Serve.Serve;
 
 public class AsyncContextImpl implements AsyncContext, Serve.AsyncCallback {
 	private ServletRequest request;
-
 	private ServletResponse response;
-
 	private Serve.ServeConnection servConn;
-
 	private long timeout;
-
 	private LinkedList<AsyncListener> listeners;
-
 	private HashMap<AsyncListener, Object[]> associatedData;
-
 	private boolean completed;
-
+	
 	AsyncContextImpl(ServletRequest request, ServletResponse response, Serve.ServeConnection servConn) {
 		this.request = request;
 		this.response = response;
@@ -60,7 +54,7 @@ public class AsyncContextImpl implements AsyncContext, Serve.AsyncCallback {
 		associatedData = new HashMap<AsyncListener, Object[]>();
 		servConn.spawnAsync(this);
 	}
-
+	
 	@Override
 	public void addListener(AsyncListener listener) {
 		synchronized (listeners) {
@@ -68,9 +62,9 @@ public class AsyncContextImpl implements AsyncContext, Serve.AsyncCallback {
 			if (listeners.contains(listener) == false)
 				listeners.add(listener);
 		}
-
+		
 	}
-
+	
 	@Override
 	public void addListener(AsyncListener listener, ServletRequest req, ServletResponse resp) {
 		addListener(listener);
@@ -79,14 +73,13 @@ public class AsyncContextImpl implements AsyncContext, Serve.AsyncCallback {
 		data[1] = resp;
 		associatedData.put(listener, data);
 	}
-
+	
 	@Override
 	public void complete() {
 		for (AsyncListener listener : listeners)
 			try {
 				Object[] data = associatedData.get(listener);
-				listener.onComplete(data == null ? new AsyncEvent(this) : new AsyncEvent(this,
-						(ServletRequest) data[0], (ServletResponse) data[1]));
+				listener.onComplete(data == null ? new AsyncEvent(this) : new AsyncEvent(this, (ServletRequest) data[0], (ServletResponse) data[1]));
 			} catch (Throwable t) {
 				if (t instanceof ThreadDeath)
 					throw (ThreadDeath) t;
@@ -94,7 +87,7 @@ public class AsyncContextImpl implements AsyncContext, Serve.AsyncCallback {
 		servConn.joinAsync();
 		completed = true;
 	}
-
+	
 	@Override
 	public <T extends AsyncListener> T createListener(Class<T> listenerClass) throws ServletException {
 		try {
@@ -102,88 +95,85 @@ public class AsyncContextImpl implements AsyncContext, Serve.AsyncCallback {
 		} catch (Exception e) {
 			throw new ServletException("Can't create " + listenerClass + ", cause: " + e);
 		}
-
+		
 	}
-
+	
 	@Override
 	public void dispatch() {
 		dispatch(((HttpServletRequest) request).getServletPath() + ((HttpServletRequest) request).getPathInfo());
-		//dispatch(((HttpServletRequest) request).getRequestURI());
+		// dispatch(((HttpServletRequest) request).getRequestURI());
 	}
-
+	
 	@Override
 	public void dispatch(String path) {
 		dispatch(request.getServletContext(), path);
 	}
-
+	
 	@Override
 	public void dispatch(ServletContext servletContext, String path) {
 		if (completed)
 			throw new IllegalStateException("Can't process dispatch after complete()");
 		try {
 			// TODO check if error handling
-			((WebAppServlet)servletContext).dispatch(path, request, response);
+			((WebAppServlet) servletContext).dispatch(path, request, response);
 		} catch (Exception e) {
 			for (AsyncListener listener : listeners)
 				try {
 					Object[] data = associatedData.get(listener);
-					listener.onError(data == null ? new AsyncEvent(this, e) : new AsyncEvent(this,
-							(ServletRequest) data[0], (ServletResponse) data[1], e));
+					listener.onError(data == null ? new AsyncEvent(this, e) : new AsyncEvent(this, (ServletRequest) data[0], (ServletResponse) data[1], e));
 				} catch (Throwable t) {
 					if (t instanceof ThreadDeath)
 						throw (ThreadDeath) t;
 				}
 		}
 	}
-
+	
 	@Override
 	public ServletRequest getRequest() {
 		return request;
 	}
-
+	
 	@Override
 	public ServletResponse getResponse() {
 		return response;
 	}
-
+	
 	@Override
 	public long getTimeout() {
 		return timeout;
 	}
-
+	
 	@Override
 	public boolean hasOriginalRequestAndResponse() {
 		return request == servConn && response == servConn;
 	}
-
+	
 	@Override
 	public void setTimeout(long timeout) {
 		this.timeout = timeout;
 	}
-
+	
 	@Override
 	public void start(Runnable r) {
 		((WebAppServlet) request.getServletContext()).asyncThreads.execute(r);
 	}
-
+	
 	public void notifyTimeout() {
 		for (AsyncListener listener : listeners)
 			try {
 				Object[] data = associatedData.get(listener);
-				listener.onTimeout(data == null ? new AsyncEvent(this) : new AsyncEvent(this, (ServletRequest) data[0],
-						(ServletResponse) data[1]));
+				listener.onTimeout(data == null ? new AsyncEvent(this) : new AsyncEvent(this, (ServletRequest) data[0], (ServletResponse) data[1]));
 			} catch (Throwable t) {
 				if (t instanceof ThreadDeath)
 					throw (ThreadDeath) t;
 			}
 	}
-
+	
 	public void notifyStart() {
 		for (AsyncListener listener : listeners)
 			try {
 				Object[] data = associatedData.get(listener);
-				listener.onStartAsync(data == null ? new AsyncEvent(this) : new AsyncEvent(this,
-						(ServletRequest) data[0], (ServletResponse) data[1]));
+				listener.onStartAsync(data == null ? new AsyncEvent(this) : new AsyncEvent(this, (ServletRequest) data[0], (ServletResponse) data[1]));
 			} catch (Throwable t) {
 				if (t instanceof ThreadDeath)
 					throw (ThreadDeath) t;

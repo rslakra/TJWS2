@@ -57,17 +57,17 @@ import rogatkin.web.WebApp.ServiceController;
 import Acme.Serve.Serve;
 
 public class SysTrayControl implements ServiceController, ActionListener {
-
+	
 	private Method s, r;
-
+	
 	private TrayIcon ti;
-
+	
 	private String port = "" + Serve.DEF_PORT;
-
+	
 	private ResourceBundle resource;
 	
 	private String newPort;
-
+	
 	public SysTrayControl() {
 		try {
 			resource = ResourceBundle.getBundle("rogatkin/resource/systraymenu");
@@ -75,7 +75,7 @@ public class SysTrayControl implements ServiceController, ActionListener {
 		} catch (MissingResourceException mre) {
 		}
 	}
-
+	
 	public void attachServe(Method stop, Method restart, String[] contextPath) {
 		s = stop;
 		r = restart;
@@ -84,7 +84,9 @@ public class SysTrayControl implements ServiceController, ActionListener {
 		SystemTray st = SystemTray.getSystemTray();
 		PopupMenu popup = new PopupMenu();
 		popup.setFont(new Font("Arial", Font.PLAIN, 12));
-		//System.err.printf("%s%n", Arrays.toString(java.awt.GraphicsEnvironment.getLocalGraphicsEnvironment() .getAvailableFontFamilyNames()));
+		// System.err.printf("%s%n",
+		// Arrays.toString(java.awt.GraphicsEnvironment.getLocalGraphicsEnvironment()
+		// .getAvailableFontFamilyNames()));
 		MenuItem mi;
 		if (Desktop.isDesktopSupported()) {
 			for (String cp : contextPath) {
@@ -93,28 +95,28 @@ public class SysTrayControl implements ServiceController, ActionListener {
 				mi.addActionListener(this);
 			}
 		}
-		popup.addSeparator(); 
+		popup.addSeparator();
 		popup.add(mi = new MenuItem(getResource("label_changeport")));
 		mi.setActionCommand("port");
 		mi.addActionListener(this);
-		popup.addSeparator(); 
-		//popup.add(mi = new MenuItem(getResource("label_stop")));
-		//mi.setActionCommand("stop");
-		//mi.addActionListener(this);
+		popup.addSeparator();
+		// popup.add(mi = new MenuItem(getResource("label_stop")));
+		// mi.setActionCommand("stop");
+		// mi.addActionListener(this);
 		popup.add(mi = new MenuItem(getResource("label_exit")));
 		mi.setActionCommand("exit");
 		mi.addActionListener(this);
-		//java.net.URL u;
+		// java.net.URL u;
 		// TODO icon can be customizable
-		ti = new TrayIcon(Toolkit.getDefaultToolkit().getImage(
-				getClass().getClassLoader().getResource("rogatkin/resource/tjws.gif")), "TJWS"+getResource("title_control_panel"), popup);
-		//javax.swing.JOptionPane.showMessageDialog(null, String.format("Created sys tray icon with image%s%n",u));
+		ti = new TrayIcon(Toolkit.getDefaultToolkit().getImage(getClass().getClassLoader().getResource("rogatkin/resource/tjws.gif")), "TJWS" + getResource("title_control_panel"), popup);
+		// javax.swing.JOptionPane.showMessageDialog(null,
+		// String.format("Created sys tray icon with image%s%n",u));
 		ti.setImageAutoSize(true);
-
+		
 		try {
 			st.add(ti);
 		} catch (AWTException e) {
-
+			
 		}
 		new Timer("Splash closer", true).schedule(new TimerTask() {
 			@Override
@@ -125,13 +127,13 @@ public class SysTrayControl implements ServiceController, ActionListener {
 			}
 		}, 3 * 1000);
 	}
-
+	
 	public String[] massageSettings(String[] args) {
 		boolean nohup = false;
 		boolean nextPort = false;
 		
 		int pi = -1;
-		for (int i = 0, n=args.length; i<n; i++) {
+		for (int i = 0, n = args.length; i < n; i++) {
 			String arg = args[i];
 			if ("-nohup".equals(arg)) {
 				nohup = true;
@@ -143,14 +145,13 @@ public class SysTrayControl implements ServiceController, ActionListener {
 				nextPort = false;
 			}
 		}
-		Preferences pref =
-				Preferences.userNodeForPackage(Serve.class);
+		Preferences pref = Preferences.userNodeForPackage(Serve.class);
 		if (newPort == null)
 			newPort = pref.get("tjwc_port", null);
 		if (newPort != null) {
 			port = newPort;
 			if (pi > 0)
-			args[pi] = newPort;
+				args[pi] = newPort;
 			else {
 				args = Arrays.copyOf(args, args.length + 2);
 				args[args.length - 2] = "-p";
@@ -165,11 +166,11 @@ public class SysTrayControl implements ServiceController, ActionListener {
 			}
 		} else {
 			// remove '-nohup'
-
+			
 		}
 		return args;
 	}
-
+	
 	public void actionPerformed(ActionEvent event) {
 		String cmd = event.getActionCommand();
 		try {
@@ -182,25 +183,26 @@ public class SysTrayControl implements ServiceController, ActionListener {
 			} else if ("port".equals(cmd)) {
 				newPort = changePort();
 				if (null != newPort) {
-					Preferences pref =
-							Preferences.userNodeForPackage(Serve.class);
+					Preferences pref = Preferences.userNodeForPackage(Serve.class);
 					pref.put("tjwc_port", newPort);
 					s.invoke(null);
 					r.invoke(null);
 				}
 			} else if (cmd.startsWith("!")) {
-				//javax.swing.JOptionPane.showMessageDialog(null, String.format("http://localhost:%s/%s", port, contextPath));
+				// javax.swing.JOptionPane.showMessageDialog(null,
+				// String.format("http://localhost:%s/%s", port, contextPath));
 				ti.displayMessage("TJWS", getResource("label_opening") + cmd.substring(1), TrayIcon.MessageType.INFO);
 				Desktop desktop = Desktop.getDesktop();
 				// TODO obtain host name, like inetaddress
 				// TODO check for SSL flag
 				desktop.browse(new URI(String.format("http://%s:%s/%s", "localhost", port, cmd.substring(1))));
-			} //else
-			//javax.swing.JOptionPane.showMessageDialog(null, "Command "+event.getActionCommand());
+			} // else
+				// javax.swing.JOptionPane.showMessageDialog(null, "Command
+				// "+event.getActionCommand());
 		} catch (URISyntaxException e) {
-			//e.printStackTrace();
+			// e.printStackTrace();
 		} catch (IOException e) {
-			//e.printStackTrace();
+			// e.printStackTrace();
 		} catch (IllegalArgumentException e) {
 			e.printStackTrace();
 		} catch (IllegalAccessException e) {
@@ -209,12 +211,11 @@ public class SysTrayControl implements ServiceController, ActionListener {
 			e.printStackTrace();
 		}
 	}
-
+	
 	private String changePort() {
-		return (String) JOptionPane.showInputDialog(null, getResource("label_newport"), getResource("label_changeport"),
-				JOptionPane.QUESTION_MESSAGE, null, null, port);
+		return (String) JOptionPane.showInputDialog(null, getResource("label_newport"), getResource("label_changeport"), JOptionPane.QUESTION_MESSAGE, null, null, port);
 	}
-
+	
 	private String getResource(String key) {
 		try {
 			return resource.getString(key);
@@ -223,7 +224,7 @@ public class SysTrayControl implements ServiceController, ActionListener {
 		}
 		return key;
 	}
-
+	
 	@Override
 	public boolean reportError(int code, String message) {
 		if (code == 3) {

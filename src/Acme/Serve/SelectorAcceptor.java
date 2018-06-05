@@ -43,11 +43,9 @@ import Acme.Serve.Serve.Acceptor;
 
 public class SelectorAcceptor implements Acceptor {
 	private ServerSocketChannel channel;
-
 	private Selector selector;
-
 	private Iterator readyItor;
-
+	
 	public Socket accept() throws IOException {
 		do {
 			if (readyItor == null) {
@@ -56,22 +54,22 @@ public class SelectorAcceptor implements Acceptor {
 				else
 					throw new IOException();
 			}
-
+			
 			if (readyItor.hasNext()) {
-
+				
 				// Get key from set
 				SelectionKey key = (SelectionKey) readyItor.next();
-
+				
 				// Remove current entry
 				readyItor.remove();
 				// TODO add processing CancelledKeyException
 				if (key.isValid() && key.isAcceptable()) {
 					// Get channel
 					ServerSocketChannel keyChannel = (ServerSocketChannel) key.channel();
-
+					
 					// Get server socket
 					ServerSocket serverSocket = keyChannel.socket();
-
+					
 					// Accept request
 					return serverSocket.accept();
 				}
@@ -79,7 +77,7 @@ public class SelectorAcceptor implements Acceptor {
 				readyItor = null;
 		} while (true);
 	}
-
+	
 	public void destroy() throws IOException {
 		String exceptions = "";
 		try {
@@ -95,14 +93,13 @@ public class SelectorAcceptor implements Acceptor {
 		if (exceptions.length() > 0)
 			throw new IOException(exceptions);
 	}
-
+	
 	public void init(Map inProperties, Map outProperties) throws IOException {
 		selector = Selector.open();
-
+		
 		channel = ServerSocketChannel.open();
 		channel.configureBlocking(false);
-		int port = inProperties.get(Serve.ARG_PORT) != null ? ((Integer) inProperties.get(Serve.ARG_PORT)).intValue()
-				: Serve.DEF_PORT;
+		int port = inProperties.get(Serve.ARG_PORT) != null ? ((Integer) inProperties.get(Serve.ARG_PORT)).intValue() : Serve.DEF_PORT;
 		InetSocketAddress isa = null;
 		if (inProperties.get(Serve.ARG_BINDADDRESS) != null)
 			try {
@@ -113,18 +110,18 @@ public class SelectorAcceptor implements Acceptor {
 			isa = new InetSocketAddress(port);
 		// TODO add ARG_BACKLOG
 		channel.socket().bind(isa);
-
+		
 		// Register interest in when connection
 		channel.register(selector, SelectionKey.OP_ACCEPT);
-		if (outProperties != null) {			 
+		if (outProperties != null) {
 			if (channel.socket().isBound())
 				outProperties.put(Serve.ARG_BINDADDRESS, channel.socket().getInetAddress().getHostName());
-			else 
+			else
 				outProperties.put(Serve.ARG_BINDADDRESS, InetAddress.getLocalHost().getHostName());
 		}
 	}
-
+	
 	public String toString() {
-		return "SelectorAcceptor - "+(channel == null ?"unset":""+channel.socket());
+		return "SelectorAcceptor - " + (channel == null ? "unset" : "" + channel.socket());
 	}
 }

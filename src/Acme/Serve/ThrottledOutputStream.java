@@ -44,7 +44,7 @@ import java.io.OutputStream;
 // <A HREF="/resources/classes/Acme.tar.Z">Fetch the entire Acme package.</A>
 
 public class ThrottledOutputStream extends FilterOutputStream {
-
+	
 	// / Parses a standard throttle file.
 	// <P>
 	// A throttle file lets you set maximum byte rates on filename patterns.
@@ -99,13 +99,13 @@ public class ThrottledOutputStream extends FilterOutputStream {
 		br.close();
 		return wcd;
 	}
-
+	
 	private long maxBps;
-
+	
 	private long bytes;
-
+	
 	private long start;
-
+	
 	// / Constructor.
 	public ThrottledOutputStream(OutputStream out, long maxBps) {
 		super(out);
@@ -113,9 +113,9 @@ public class ThrottledOutputStream extends FilterOutputStream {
 		bytes = 0;
 		start = System.currentTimeMillis();
 	}
-
+	
 	private byte[] oneByte = new byte[1];
-
+	
 	// / Writes a byte. This method will block until the byte is actually
 	// written.
 	// @param b the byte to be written
@@ -124,7 +124,7 @@ public class ThrottledOutputStream extends FilterOutputStream {
 		oneByte[0] = (byte) b;
 		write(oneByte, 0, 1);
 	}
-
+	
 	// / Writes a subarray of bytes.
 	// @param b the data to be written
 	// @param off the start offset in the data
@@ -134,7 +134,7 @@ public class ThrottledOutputStream extends FilterOutputStream {
 		// Check the throttle.
 		bytes += len;
 		long elapsed = Math.max(System.currentTimeMillis() - start, 1);
-
+		
 		long bps = bytes * 1000L / elapsed;
 		if (bps > maxBps) {
 			// Oops, sending too fast.
@@ -144,9 +144,9 @@ public class ThrottledOutputStream extends FilterOutputStream {
 			} catch (InterruptedException ignore) {
 			}
 		}
-
+		
 		// Write the bytes.
 		out.write(b, off, len);
 	}
-
+	
 }

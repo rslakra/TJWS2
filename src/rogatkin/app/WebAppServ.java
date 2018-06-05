@@ -32,8 +32,10 @@ import rogatkin.web.WebApp;
 import Acme.Utils;
 
 public class WebAppServ extends Main {
-
-	/** launches embedded app with app server settings
+	
+	/**
+	 * launches embedded app with app server settings
+	 * 
 	 * @param args
 	 */
 	public static void main(String[] args) {
@@ -41,7 +43,7 @@ public class WebAppServ extends Main {
 			try {
 				initAppServer(Utils.splitStr(WebApp.readDescriptor()[0]));
 			} catch (NullPointerException npe) {
-				//npe.printStackTrace();
+				// npe.printStackTrace();
 			}
 		else
 			initAppServer(args);

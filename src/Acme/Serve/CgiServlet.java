@@ -29,7 +29,6 @@
 package Acme.Serve;
 
 import java.io.BufferedReader;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -40,10 +39,10 @@ import java.util.StringTokenizer;
 import java.util.Vector;
 
 import javax.servlet.ServletException;
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.Cookie;
 
 /// Runs CGI programs.
 // <P>
@@ -59,13 +58,13 @@ import javax.servlet.http.Cookie;
 // @see Acme.Serve.Serve
 
 public class CgiServlet extends HttpServlet {
-
+	
 	// / Returns a string containing information about the author, version, and
 	// copyright of the servlet.
 	public String getServletInfo() {
 		return "TJWS CGI extension $Id: CgiServlet.java,v 1.10 2012/08/24 03:06:34 dmitriy Exp $";
 	}
-
+	
 	// / Services a single request from the client.
 	// @param req the servlet request
 	// @param req the servlet response
@@ -81,25 +80,27 @@ public class CgiServlet extends HttpServlet {
 		else
 			dispatchPathname(req, res, getServletContext().getRealPath(req.getServletPath() + pathInfo));
 	}
-
+	
 	private void dispatchPathname(HttpServletRequest req, HttpServletResponse res, String path) throws IOException {
 		if (new File(path).exists())
 			serveFile(req, res, path);
 		else
 			res.sendError(HttpServletResponse.SC_NOT_FOUND);
 	}
-
+	
 	private void serveFile(HttpServletRequest req, HttpServletResponse res, String path) throws IOException {
 		String queryString = req.getQueryString();
 		int contentLength = req.getContentLength();
 		int c;
-
+		
 		log("running " + path + "?" + queryString);
-
+		
 		// Make argument list.
-		String argList[] = (path + (queryString != null && queryString.indexOf("=") == -1 ? "+" + queryString : ""))
-				.split("\\+"); /* 1.4 */
-
+		String argList[] = (path + (queryString != null && queryString.indexOf("=") == -1 ? "+" + queryString : "")).split("\\+"); /*
+																																	 * 1.
+																																	 * 4
+																																	 */
+		
 		// Make environment list.
 		Vector envVec = new Vector();
 		envVec.addElement(makeEnv("PATH", "/usr/local/bin:/usr/ucb:/bin:/usr/bin"));
@@ -135,12 +136,12 @@ public class CgiServlet extends HttpServlet {
 			envVec.addElement(makeEnv("HTTP_" + name.toUpperCase().replace('-', '_'), value));
 		}
 		String envList[] = makeList(envVec);
-
+		
 		// Start the command.
-        	Process proc = Runtime.getRuntime().exec(argList, envList);
-        	OutputStream procOut = proc.getOutputStream();
-        	BufferedReader procIn = new BufferedReader(new InputStreamReader(proc.getInputStream()));
-        	InputStream procErr = proc.getErrorStream();
+		Process proc = Runtime.getRuntime().exec(argList, envList);
+		OutputStream procOut = proc.getOutputStream();
+		BufferedReader procIn = new BufferedReader(new InputStreamReader(proc.getInputStream()));
+		InputStream procErr = proc.getErrorStream();
 		try {
 			// If it's a POST, copy the request data to the process.
 			if (req.getMethod().equalsIgnoreCase("post")) {
@@ -153,7 +154,7 @@ public class CgiServlet extends HttpServlet {
 				}
 				procOut.close();
 			}
-
+			
 			// Now read the response from the process.
 			OutputStream resOut = res.getOutputStream();
 			// Some of the headers have to be intercepted and handled.
@@ -172,14 +173,14 @@ public class CgiServlet extends HttpServlet {
 						StringTokenizer tok = new StringTokenizer(line, " ");
 						try {
 							switch (tok.countTokens()) {
-							case 2:
-								tok.nextToken();
-								res.setStatus(Integer.parseInt(tok.nextToken()));
-								break;
-							case 3:
-								tok.nextToken();
-								res.setStatus(Integer.parseInt(tok.nextToken()), tok.nextToken());
-								break;
+								case 2:
+									tok.nextToken();
+									res.setStatus(Integer.parseInt(tok.nextToken()));
+									break;
+								case 3:
+									tok.nextToken();
+									res.setStatus(Integer.parseInt(tok.nextToken()), tok.nextToken());
+									break;
 							}
 						} catch (NumberFormatException ignore) {
 						}
@@ -194,12 +195,12 @@ public class CgiServlet extends HttpServlet {
 						StringTokenizer tok = new StringTokenizer(value, " ");
 						try {
 							switch (tok.countTokens()) {
-							case 1:
-								res.setStatus(Integer.parseInt(tok.nextToken()));
-								break;
-							case 2:
-								res.setStatus(Integer.parseInt(tok.nextToken()), tok.nextToken());
-								break;
+								case 1:
+									res.setStatus(Integer.parseInt(tok.nextToken()));
+									break;
+								case 2:
+									res.setStatus(Integer.parseInt(tok.nextToken()), tok.nextToken());
+									break;
 							}
 						} catch (NumberFormatException ignore) {
 						}
@@ -233,32 +234,32 @@ public class CgiServlet extends HttpServlet {
 			// There's some weird bug in Java, when reading from a Process
 			// you get a spurious IOException. We have to ignore it.
 		} finally {
-        	    try {
-        		procOut.close();
-        	    } catch (IOException e) {
-        	    }
-        	    try {
-        		procIn.close();
-        	    } catch (IOException e) {
-        	    }
-        	    try {
-        		procErr.close();
-        	    } catch (IOException e) {
-        	    }
-        	// TODO make it configurable    
-		    //proc.destroy();
+			try {
+				procOut.close();
+			} catch (IOException e) {
+			}
+			try {
+				procIn.close();
+			} catch (IOException e) {
+			}
+			try {
+				procErr.close();
+			} catch (IOException e) {
+			}
+			// TODO make it configurable
+			// proc.destroy();
 		}
 	}
-
+	
 	private static String makeEnv(String name, String value) {
 		return name + "=" + value;
 	}
-
+	
 	private static String[] makeList(Vector vec) {
 		String list[] = new String[vec.size()];
 		for (int i = 0; i < vec.size(); ++i)
 			list[i] = (String) vec.elementAt(i);
 		return list;
 	}
-
+	
 }

@@ -22,28 +22,30 @@ import org.apache.jasper.tjws.SimpleInstanceManager;
 import org.apache.tomcat.InstanceManager;
 
 /**
- * @version $Id: InstanceManagerFactory.java,v 1.1 2011/06/04 04:59:07 dmitriy Exp $
+ * @version $Id: InstanceManagerFactory.java,v 1.1 2011/06/04 04:59:07 dmitriy
+ *          Exp $
  */
 public class InstanceManagerFactory {
-
-	static private InstanceManager cachedManager;  // same for all apps for now
 	
-    private InstanceManagerFactory() {
-    }
-
-    public static InstanceManager getInstanceManager(ServletConfig config) {
-        InstanceManager instanceManager = 
-                (InstanceManager) config.getServletContext().getAttribute(InstanceManager.class.getName());
-        if (instanceManager == null) {
-        	synchronized(InstanceManagerFactory.class) {
-        		if (cachedManager == null) {
-        			cachedManager = new SimpleInstanceManager();
-        		}
-        	}
-        	instanceManager = cachedManager;
-            //throw new IllegalStateException("No org.apache.tomcat.InstanceManager set in ServletContext");
-        }
-        return instanceManager;
-    }
-
+	// same for all apps for now
+	static private InstanceManager cachedManager;
+	
+	private InstanceManagerFactory() {
+	}
+	
+	public static InstanceManager getInstanceManager(ServletConfig config) {
+		InstanceManager instanceManager = (InstanceManager) config.getServletContext().getAttribute(InstanceManager.class.getName());
+		if (instanceManager == null) {
+			synchronized (InstanceManagerFactory.class) {
+				if (cachedManager == null) {
+					cachedManager = new SimpleInstanceManager();
+				}
+			}
+			instanceManager = cachedManager;
+			// throw new IllegalStateException("No
+			// org.apache.tomcat.InstanceManager set in ServletContext");
+		}
+		return instanceManager;
+	}
+	
 }

@@ -70,29 +70,29 @@ public class FileServlet extends HttpServlet {
 	public static final String DEF_USE_COMPRESSION = "tjws.fileservlet.usecompression";
 	
 	public static final String DEF_USE_SUPRESSIND = "tjws.fileservlet.suppressindex";
-
+	
 	// We keep a single throttle table for all instances of the servlet.
 	// Normally there is only one instance; the exception is subclasses.
 	static Acme.WildcardDictionary throttleTab = null;
-
+	
 	static final String[] DEFAULTINDEXPAGES = { "index.html", "index.htm", "default.htm", "default.html", "index.php", "index.jsp" };
-
+	
 	static final DecimalFormat lengthftm = new DecimalFormat("#");
-
+	
 	static final String BYTES_UNIT = "bytes";
-
+	
 	protected String charSet = Serve.UTF8;// "iso-8859-1";
-
+	
 	private static final boolean logenabled = false;
-
-	//	 true;
-
+	
+	// true;
+	
 	private Method canExecute, getFreeSpace; // TODO implement free space
-
+	
 	private boolean useCompression;
 	
 	private boolean supressIndex;
-
+	
 	// / Constructor.
 	public FileServlet() {
 		try {
@@ -108,7 +108,7 @@ public class FileServlet extends HttpServlet {
 		useCompression = System.getProperty(DEF_USE_COMPRESSION) != null;
 		supressIndex = System.getProperty(DEF_USE_SUPRESSIND) != null;
 	}
-
+	
 	// / Constructor with throttling.
 	// @param throttles filename containing throttle settings
 	// @param charset used for displaying directory page
@@ -119,7 +119,7 @@ public class FileServlet extends HttpServlet {
 			this.charSet = charset;
 		readThrottles(throttles);
 	}
-
+	
 	private void readThrottles(String throttles) throws IOException {
 		Acme.WildcardDictionary newThrottleTab = ThrottledOutputStream.parseThrottleFile(throttles);
 		if (throttleTab == null)
@@ -135,40 +135,37 @@ public class FileServlet extends HttpServlet {
 			}
 		}
 	}
-
+	
 	// / Returns a string containing information about the author, version, and
 	// copyright of the servlet.
 	public String getServletInfo() {
 		return "TJWS: File servlet similar to httpd";
 	}
-
+	
 	// / Services a single request from the client.
 	// @param req the servlet request
 	// @param req the servlet response
 	// @exception ServletException when an exception has occurred
 	public void service(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
 		boolean headOnly;
-		if (req.getMethod().equalsIgnoreCase("get") || req.getAttribute("javax.servlet.forward.request_uri") != null
-				|| req.getAttribute("javax.servlet.include.request_uri") != null)
+		if (req.getMethod().equalsIgnoreCase("get") || req.getAttribute("javax.servlet.forward.request_uri") != null || req.getAttribute("javax.servlet.include.request_uri") != null)
 			headOnly = false;
 		else if (req.getMethod().equalsIgnoreCase("head"))
 			headOnly = true;
 		else {
-			res.sendError(HttpServletResponse.SC_NOT_IMPLEMENTED, "Method "+req.getMethod());
+			res.sendError(HttpServletResponse.SC_NOT_IMPLEMENTED, "Method " + req.getMethod());
 			return;
 		}
 		req.setCharacterEncoding(Serve.UTF8);
 		String path = Utils.canonicalizePath(req.getPathInfo());
-		log("Canonical path:"+path+" for "+req.getPathInfo()+" and servelt path "+req.getServletPath());
-		//res.setBufferSize(Utils.COPY_BUF_SIZE/2);
+		log("Canonical path:" + path + " for " + req.getPathInfo() + " and servelt path " + req.getServletPath());
+		// res.setBufferSize(Utils.COPY_BUF_SIZE/2);
 		dispatchPathname(req, res, headOnly, path);
 	}
-
-	private void dispatchPathname(HttpServletRequest req, HttpServletResponse res, boolean headOnly, String path)
-			throws IOException {
+	
+	private void dispatchPathname(HttpServletRequest req, HttpServletResponse res, boolean headOnly, String path) throws IOException {
 		log("path trans: " + req.getPathTranslated());
-		String filename = req.getPathTranslated() != null ? req.getPathTranslated().replace('/', File.separatorChar)
-				: "";
+		String filename = req.getPathTranslated() != null ? req.getPathTranslated().replace('/', File.separatorChar) : "";
 		File file = new File(filename);
 		log("retrieving '" + filename + "' for path " + path);
 		if (file.exists()) {
@@ -180,11 +177,10 @@ public class FileServlet extends HttpServlet {
 					showIdexFile(req, res, headOnly, path, filename);
 			}
 		} else
-			res.sendError(HttpServletResponse.SC_NOT_FOUND, file.getName()+" not found");
+			res.sendError(HttpServletResponse.SC_NOT_FOUND, file.getName() + " not found");
 	}
-
-	private void showIdexFile(HttpServletRequest req, HttpServletResponse res, boolean headOnly, String path,
-			String parent) throws IOException {
+	
+	private void showIdexFile(HttpServletRequest req, HttpServletResponse res, boolean headOnly, String path, String parent) throws IOException {
 		log("showing index in directory " + parent);
 		for (int i = 0; i < DEFAULTINDEXPAGES.length; i++) {
 			File indexFile = new File(parent, DEFAULTINDEXPAGES[i]);
@@ -194,14 +190,13 @@ public class FileServlet extends HttpServlet {
 			}
 		}
 		// index not found
-        	if (supressIndex)
-        	    res.sendError(HttpServletResponse.SC_NOT_FOUND, "No index file found");
-        	else
-        	    serveDirectory(req, res, headOnly, path, new File(parent));
+		if (supressIndex)
+			res.sendError(HttpServletResponse.SC_NOT_FOUND, "No index file found");
+		else
+			serveDirectory(req, res, headOnly, path, new File(parent));
 	}
-
-	private void serveFile(HttpServletRequest req, HttpServletResponse res, boolean headOnly, String path, File file)
-			throws IOException {
+	
+	private void serveFile(HttpServletRequest req, HttpServletResponse res, boolean headOnly, String path, File file) throws IOException {
 		log("getting " + file);
 		if (logenabled) {
 			Enumeration enh = req.getHeaderNames();
@@ -221,12 +216,12 @@ public class FileServlet extends HttpServlet {
 				res.sendError(HttpServletResponse.SC_FORBIDDEN, "Forbidden, exception:" + e);
 				return;
 			}
-
+		
 		// Handle If-Modified-Since.
 		res.setStatus(HttpServletResponse.SC_OK);
 		long lastMod = file.lastModified();
 		long ifModSince = req.getDateHeader("If-Modified-Since");
-                boolean noContLen = false;
+		boolean noContLen = false;
 		if (ifModSince != -1 && ifModSince >= lastMod) {
 			res.setStatus(HttpServletResponse.SC_NOT_MODIFIED);
 			headOnly = true;
@@ -256,17 +251,17 @@ public class FileServlet extends HttpServlet {
 							er = flen - 1;
 						}
 					} catch (NumberFormatException nfe) {
-
+						
 					}
 				} // else invalid range? ignore?
 			} // else other units not supported
 			log("range values " + sr + " to " + er);
 		} else {
-			 res.setHeader("Accept-Ranges", "bytes"); // by Alexander Ryumshin
+			res.setHeader("Accept-Ranges", "bytes"); // by Alexander Ryumshin
 		}
 		long clen = er < 0 ? flen : (er - sr + 1);
 		res.setDateHeader("Last-modified", lastMod);
-
+		
 		if (er > 0) {
 			if (sr > er || er >= flen) {
 				// TODO If-Range presence can change behavior
@@ -294,11 +289,15 @@ public class FileServlet extends HttpServlet {
 				res.setHeader("Content-Length", Long.toString(clen));
 		}
 		
-		String dnla = req.getHeader("GetContentFeatures.DLNA.ORG"); // check also Pragma: getIfoFileURI.dlna.org
+		String dnla = req.getHeader("GetContentFeatures.DLNA.ORG"); // check
+																	// also
+																	// Pragma:
+																	// getIfoFileURI.dlna.org
 		if ("1".equals(dnla)) {
 			res.setHeader("transferMode.dlna.org", "Streaming");
-			//res.setHeader("contentFeatures.dlna.org", "DLNA.ORG_OP=00;DLNA.ORG_CI=0");
-			//res.setHeader("","");
+			// res.setHeader("contentFeatures.dlna.org",
+			// "DLNA.ORG_OP=00;DLNA.ORG_CI=0");
+			// res.setHeader("","");
 		}
 		OutputStream out = null;
 		InputStream in = null;
@@ -313,7 +312,7 @@ public class FileServlet extends HttpServlet {
 						out = new ThrottledOutputStream(out, throttleItem.getMaxBps());
 					}
 				}
-
+				
 				in = new FileInputStream(file);
 				while (sr > 0) {
 					long sl = in.skip(sr);
@@ -341,15 +340,14 @@ public class FileServlet extends HttpServlet {
 			}
 		}
 	}
-
+	
 	// / Copy a file from in to out.
 	// Sub-classes can override this in order to do filtering of some sort.
 	public void copyStream(InputStream in, OutputStream out, long len) throws IOException {
 		Acme.Utils.copyStream(in, out, len);
 	}
-
-	private void serveDirectory(HttpServletRequest req, HttpServletResponse res, boolean headOnly, String path,
-			File file) throws IOException {
+	
+	private void serveDirectory(HttpServletRequest req, HttpServletResponse res, boolean headOnly, String path, File file) throws IOException {
 		log("indexing " + file);
 		if (!file.canRead()) {
 			res.sendError(HttpServletResponse.SC_FORBIDDEN);
@@ -398,7 +396,7 @@ public class FileServlet extends HttpServlet {
 					} catch (InvocationTargetException e) {
 					}
 				String aFileSize = lengthftm.format(aFileLen = aFile.length());
-				total += (aFileLen + 1023) / 1024; // 
+				total += (aFileLen + 1023) / 1024; //
 				while (aFileSize.length() < 12)
 					aFileSize = " " + aFileSize;
 				String aFileDate = Acme.Utils.lsDateStr(new Date(aFile.lastModified()));
@@ -406,10 +404,12 @@ public class FileServlet extends HttpServlet {
 					aFileDate += " ";
 				String aFileDirsuf = (aFile.isDirectory() ? "/" : "");
 				String aFileSuf = (aFile.isDirectory() ? "/" : "");
-// TODO HTML encode file name
-				p.println(aFileType + aFileRead + aFileWrite + aFileExe + "  " + aFileSize + "  " + aFileDate + "  "
-						+ "<A HREF=\"" + URLEncoder.encode(names[i], charSet) /* 1.4 */
-						+ aFileDirsuf + "\">" + Utils.htmlEncode(names[i], false) + aFileSuf + "</A>");
+				// TODO HTML encode file name
+				p.println(aFileType + aFileRead + aFileWrite + aFileExe + "  " + aFileSize + "  " + aFileDate + "  " + "<A HREF=\"" + URLEncoder.encode(names[i], charSet) /*
+																																											 * 1.
+																																											 * 4
+																																											 */
+								+ aFileDirsuf + "\">" + Utils.htmlEncode(names[i], false) + aFileSuf + "</A>");
 			}
 			if (total != 0)
 				total += 3;
@@ -422,7 +422,7 @@ public class FileServlet extends HttpServlet {
 		}
 		out.close();
 	}
-
+	
 	/**
 	 * 
 	 * @param req
@@ -437,8 +437,7 @@ public class FileServlet extends HttpServlet {
 	 * @throws IOException
 	 *             in redirection
 	 */
-	private boolean redirectDirectory(HttpServletRequest req, HttpServletResponse res, String path, File file)
-			throws IOException {
+	private boolean redirectDirectory(HttpServletRequest req, HttpServletResponse res, String path, File file) throws IOException {
 		int pl = path.length();
 		if (pl > 0 && path.charAt(pl - 1) != '/') {
 			// relative redirect
@@ -453,8 +452,8 @@ public class FileServlet extends HttpServlet {
 		}
 		return false;
 	}
-
-	//@Override
+	
+	// @Override
 	public void log(String msg) {
 		if (logenabled)
 			super.log(msg);

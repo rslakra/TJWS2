@@ -58,26 +58,26 @@ import javax.websocket.server.ServerEndpointConfig.Configurator;
  *
  */
 public class SimpleServerContainer implements ServerContainer, ServletContextListener {
-
+	
 	HashMap<String, ServerEndpointConfig> endpoints;
 	SimpleProvider provider;
-
+	
 	HashSet<SimpleSession> sessions;
-
+	
 	ExecutorService asyncService;
 	
 	int defBufSize = 1024 * 8;
 	
 	long idleTimeout;
 	long asyncTimeout;
-
+	
 	public SimpleServerContainer(SimpleProvider simpleProvider) {
 		provider = simpleProvider;
 		endpoints = new HashMap<String, ServerEndpointConfig>();
 		sessions = new HashSet<SimpleSession>();
 		asyncService = Executors.newSingleThreadExecutor();
 	}
-
+	
 	@Override
 	public void addEndpoint(Class<?> arg0) throws DeploymentException {
 		if (arg0.isAssignableFrom(ServerEndpointConfig.class)) {
@@ -91,102 +91,98 @@ public class SimpleServerContainer implements ServerContainer, ServletContextLis
 		} else {
 			ServerEndpoint sep = arg0.getAnnotation(ServerEndpoint.class);
 			Configurator configurator = null;
-			if (ServerEndpointConfig.Configurator.class !=sep.configurator())
+			if (ServerEndpointConfig.Configurator.class != sep.configurator())
 				try {
 					configurator = sep.configurator().newInstance();
-				} catch(Exception e) {
-					throw new DeploymentException("Can't instantiate custom Configurator for "+sep.configurator(), e);
+				} catch (Exception e) {
+					throw new DeploymentException("Can't instantiate custom Configurator for " + sep.configurator(), e);
 				}
-			addEndpoint(ServerEndpointConfig.Builder.create(arg0, sep.value())
-					.subprotocols(Arrays.asList(sep.subprotocols())).encoders(Arrays.asList(sep.encoders()))
-					.decoders(Arrays.asList(sep.decoders())).configurator(configurator).build());
+			addEndpoint(ServerEndpointConfig.Builder.create(arg0, sep.value()).subprotocols(Arrays.asList(sep.subprotocols())).encoders(Arrays.asList(sep.encoders())).decoders(Arrays.asList(sep.decoders())).configurator(configurator).build());
 		}
-
+		
 	}
-
+	
 	@Override
 	public void addEndpoint(ServerEndpointConfig arg0) throws DeploymentException {
 		if (endpoints.containsKey(arg0.getPath()))
 			throw new DeploymentException("More than one end points use same path " + arg0.getPath());
 		endpoints.put(arg0.getPath(), arg0);
 	}
-
+	
 	@Override
 	public Session connectToServer(Object arg0, URI arg1) throws DeploymentException, IOException {
 		throw new UnsupportedOperationException("No client websocket support");
 	}
-
+	
 	@Override
 	public Session connectToServer(Class<?> arg0, URI arg1) throws DeploymentException, IOException {
 		throw new UnsupportedOperationException("No client websocket support");
 	}
-
+	
 	@Override
-	public Session connectToServer(Endpoint arg0, ClientEndpointConfig arg1, URI arg2) throws DeploymentException,
-			IOException {
+	public Session connectToServer(Endpoint arg0, ClientEndpointConfig arg1, URI arg2) throws DeploymentException, IOException {
 		throw new UnsupportedOperationException("No client websocket support");
 	}
-
+	
 	@Override
-	public Session connectToServer(Class<? extends Endpoint> arg0, ClientEndpointConfig arg1, URI arg2)
-			throws DeploymentException, IOException {
+	public Session connectToServer(Class<? extends Endpoint> arg0, ClientEndpointConfig arg1, URI arg2) throws DeploymentException, IOException {
 		throw new UnsupportedOperationException("No client websocket support");
 	}
-
+	
 	@Override
 	public long getDefaultAsyncSendTimeout() {
 		return asyncTimeout;
 	}
-
+	
 	@Override
 	public int getDefaultMaxBinaryMessageBufferSize() {
 		return defBufSize;
 	}
-
+	
 	@Override
 	public long getDefaultMaxSessionIdleTimeout() {
 		return idleTimeout;
 	}
-
+	
 	@Override
 	public int getDefaultMaxTextMessageBufferSize() {
 		return defBufSize;
 	}
-
+	
 	@Override
 	public Set<Extension> getInstalledExtensions() {
 		return null;
 	}
-
+	
 	@Override
 	public void setAsyncSendTimeout(long arg0) {
 		if (arg0 >= 0)
 			asyncTimeout = arg0;
 	}
-
+	
 	@Override
 	public void setDefaultMaxBinaryMessageBufferSize(int arg0) {
 		if (arg0 > 1024)
 			defBufSize = arg0;
 	}
-
+	
 	@Override
 	public void setDefaultMaxSessionIdleTimeout(long arg0) {
 		if (arg0 < 0)
 			return;
 		idleTimeout = arg0;
 	}
-
+	
 	@Override
 	public void setDefaultMaxTextMessageBufferSize(int arg0) {
 		if (arg0 > 1024)
 			defBufSize = arg0;
 	}
-
+	
 	void log(String msg, Object... params) {
 		log(null, msg, params);
 	}
-
+	
 	void log(Throwable e, String msg, Object... params) {
 		msg = "websocket : " + msg;
 		if (e == null)
@@ -199,33 +195,34 @@ public class SimpleServerContainer implements ServerContainer, ServletContextLis
 		else
 			provider.serve.log(String.format(msg, params), e);
 	}
-
+	
 	@Override
 	public void contextDestroyed(ServletContextEvent arg0) {
 		CloseReason cr = new CloseReason(CloseCodes.SERVICE_RESTART, "");
-		//ArrayList <SimpleSession> copyss = new ArrayList<SimpleSession>(sessions);
+		// ArrayList <SimpleSession> copyss = new
+		// ArrayList<SimpleSession>(sessions);
 		for (SimpleSession ss : new ArrayList<SimpleSession>(sessions))
 			try {
-				//System.err.printf("Closing session %s%n", ss);
+				// System.err.printf("Closing session %s%n", ss);
 				ss.close(cr);
 			} catch (IOException e) {
-
+				
 			}
 		sessions.clear();
 		asyncService.shutdown();
 	}
-
+	
 	@Override
 	public void contextInitialized(ServletContextEvent arg0) {
-
+		
 	}
-
+	
 	void addSession(SimpleSession ss) {
 		sessions.add(ss);
 	}
-
+	
 	void removeSession(SimpleSession ss) {
 		sessions.remove(ss);
 	}
-
+	
 }

@@ -22,9 +22,9 @@ import javax.websocket.server.ServerApplicationConfig;
 import javax.websocket.server.ServerEndpoint;
 
 public class EndPointScanner {
-
+	
 	protected static final char[] CR = { '\r', '\n' };
-
+	
 	public static void main(String... args) {
 		if (args.length != 2) {
 			usage();
@@ -42,7 +42,7 @@ public class EndPointScanner {
 		File lib = new File(web_inf, "lib");
 		if (lib.exists() && lib.isDirectory()) {
 			cp.addAll(Arrays.asList(lib.listFiles(new FileFilter() {
-
+				
 				@Override
 				public boolean accept(File f) {
 					if (f.isFile()) {
@@ -60,20 +60,20 @@ public class EndPointScanner {
 			e.printStackTrace();
 		}
 	}
-
+	
 	static void usage() {
 		System.out.printf("Usage: EndPointScanner <WEB-INF directory> <scan info file>%n");
 	}
-
+	
 	public void scan(final List<File> cp, final Writer w) {
 		new FastClasspathScanner("") {
 			URLClassLoader classLoader;
-
+			
 			@Override
 			public List<File> getUniqueClasspathElements() {
 				return cp;
 			}
-
+			
 			@Override
 			public ClassLoader getClassLoader() {
 				if (classLoader == null) {
@@ -89,13 +89,13 @@ public class EndPointScanner {
 				}
 				return classLoader;
 			}
-
+			
 			@Override
 			public void scan() {
 				try {
 					super.scan();
 				} finally {
-					try { 
+					try {
 						if (classLoader != null)
 							classLoader.getClass().getMethod("close").invoke(classLoader);
 					} catch (Exception e) {
@@ -104,23 +104,22 @@ public class EndPointScanner {
 					}
 				}
 			}
-
-		}.matchClassesImplementing(ServerApplicationConfig.class,
-				new InterfaceMatchProcessor<ServerApplicationConfig>() {
-
-					@Override
-					public void processMatch(Class<? extends ServerApplicationConfig> arg0) {
-						try {
-							w.write("ServerApplicationConfig ");
-							w.write(arg0.getName());
-							w.write(CR);
-						} catch (IOException e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
-						}
-					}
-
-				}).matchClassesWithAnnotation(ServerEndpoint.class, new ClassAnnotationMatchProcessor() {
+			
+		}.matchClassesImplementing(ServerApplicationConfig.class, new InterfaceMatchProcessor<ServerApplicationConfig>() {
+			
+			@Override
+			public void processMatch(Class<? extends ServerApplicationConfig> arg0) {
+				try {
+					w.write("ServerApplicationConfig ");
+					w.write(arg0.getName());
+					w.write(CR);
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+			
+		}).matchClassesWithAnnotation(ServerEndpoint.class, new ClassAnnotationMatchProcessor() {
 			public void processMatch(Class<?> matchingClass) {
 				try {
 					w.write("ServerEndpoint ");
@@ -132,7 +131,7 @@ public class EndPointScanner {
 				}
 			}
 		}).matchSubclassesOf(Endpoint.class, new SubclassMatchProcessor<Endpoint>() {
-
+			
 			@Override
 			public void processMatch(Class<? extends Endpoint> arg0) {
 				try {
@@ -145,6 +144,6 @@ public class EndPointScanner {
 				}
 			}
 		}).scan();
-
+		
 	}
 }

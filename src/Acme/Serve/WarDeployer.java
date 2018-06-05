@@ -31,5 +31,5 @@ package Acme.Serve;
  * 
  */
 public interface WarDeployer {
-    void deploy(Serve server);
+	void deploy(Serve server);
 }

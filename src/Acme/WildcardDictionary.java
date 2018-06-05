@@ -51,38 +51,38 @@ import java.util.Vector;
 // @see Acme.Utils#match
 
 public class WildcardDictionary extends Dictionary {
-
+	
 	private Vector keys;
-
+	
 	private Vector elements;
-
+	
 	// / Constructor.
 	public WildcardDictionary() {
 		keys = new Vector();
 		elements = new Vector();
 	}
-
+	
 	// / Returns the number of elements contained within the dictionary.
 	public int size() {
 		return elements.size();
 	}
-
+	
 	// / Returns true if the dictionary contains no elements.
 	public boolean isEmpty() {
 		return size() == 0;
 	}
-
+	
 	// / Returns an enumeration of the dictionary's keys.
 	public Enumeration keys() {
 		return keys.elements();
 	}
-
+	
 	// / Returns an enumeration of the elements. Use the Enumeration methods
 	// on the returned object to fetch the elements sequentially.
 	public Enumeration elements() {
 		return elements.elements();
 	}
-
+	
 	// / Gets the object associated with the specified key in the dictionary.
 	// The key is assumed to be a String, which is matched against
 	// the wildcard-pattern keys in the dictionary.
@@ -106,7 +106,7 @@ public class WildcardDictionary extends Dictionary {
 			return elements.elementAt(found);
 		return null;
 	}
-
+	
 	public static String trimPathSeparators(String src) {
 		StringBuffer result = new StringBuffer(src.length());
 		boolean ms = false;
@@ -124,7 +124,7 @@ public class WildcardDictionary extends Dictionary {
 		}
 		return result.toString();
 	}
-
+	
 	// / Puts the specified element into the Dictionary, using the specified
 	// key. The element may be retrieved by doing a get() with the same
 	// key. The key and the element cannot be null.
@@ -145,7 +145,7 @@ public class WildcardDictionary extends Dictionary {
 			return null;
 		}
 	}
-
+	
 	// / Removes the element corresponding to the key. Does nothing if the
 	// key is not present.
 	// @param key the key that needs to be removed

@@ -43,14 +43,14 @@ import Acme.Serve.Serve;
 public class DualSocketAcceptor extends SSLAcceptor {
 	protected static class TwoHeadServerSocket extends ServerSocket {
 		protected BlockingQueue<Socket> requestQueue;
-
+		
 		protected ServerSocket socket1, socket2;
 		
 		private Thread currentThread;
-
+		
 		public TwoHeadServerSocket(ServerSocket socket1, ServerSocket socket2) throws IOException {
-			requestQueue = new LinkedBlockingQueue<Socket>(1000); // ?? backlog
-			//			 ArrayBlockingQueue
+			// ?? backlog ArrayBlockingQueue
+			requestQueue = new LinkedBlockingQueue<Socket>(1000);
 			Thread thread;
 			if (socket1 != null) {
 				thread = new Thread(new AcceptQueuer(socket1), "Accept processor 1");
@@ -65,7 +65,7 @@ public class DualSocketAcceptor extends SSLAcceptor {
 				this.socket2 = socket2;
 			}
 		}
-
+		
 		public Socket accept() throws IOException {
 			Socket result;
 			currentThread = Thread.currentThread();
@@ -73,7 +73,7 @@ public class DualSocketAcceptor extends SSLAcceptor {
 				try {
 					result = requestQueue.poll(1000L, TimeUnit.SECONDS);
 					if (result != null) {
-						result.setSoTimeout(10*60*1000); // temp 10 mins
+						result.setSoTimeout(10 * 60 * 1000); // temp 10 mins
 						return result;
 					}
 				} catch (InterruptedException e) {
@@ -82,7 +82,7 @@ public class DualSocketAcceptor extends SSLAcceptor {
 			}
 			throw new IOException();
 		}
-
+		
 		public void close() throws IOException {
 			if (currentThread != null)
 				currentThread.interrupt();
@@ -96,18 +96,18 @@ public class DualSocketAcceptor extends SSLAcceptor {
 			if (ioe != null)
 				throw ioe;
 		}
-
+		
 		public String toString() {
 			return "" + socket1 + "/" + socket2;
 		}
-
+		
 		class AcceptQueuer implements Runnable {
 			ServerSocket socket;
-
+			
 			AcceptQueuer(ServerSocket socket) {
 				this.socket = socket;
 			}
-
+			
 			public void run() {
 				for (;;)
 					try {
@@ -120,11 +120,10 @@ public class DualSocketAcceptor extends SSLAcceptor {
 			}
 		}
 	}
-
+	
 	public void init(Map inProperties, Map outProperties) throws IOException {
 		super.init(inProperties, outProperties);
-		int port = inProperties.get(Serve.ARG_PORT) != null ? ((Integer) inProperties.get(Serve.ARG_PORT)).intValue()
-				: Serve.DEF_PORT;
+		int port = inProperties.get(Serve.ARG_PORT) != null ? ((Integer) inProperties.get(Serve.ARG_PORT)).intValue() : Serve.DEF_PORT;
 		int bl = 50;
 		try {
 			// TODO: consider conversion at getting the argument
@@ -139,7 +138,7 @@ public class DualSocketAcceptor extends SSLAcceptor {
 				ia = InetAddress.getByName((String) inProperties.get(Serve.ARG_BINDADDRESS));
 			} catch (Exception e) {
 			}
-
+		
 		socket = new TwoHeadServerSocket(new ServerSocket(port, bl, ia), socket);
 	}
 }
