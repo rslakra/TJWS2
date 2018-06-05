@@ -254,7 +254,8 @@ public class Serve implements ServletContext, Serializable {
 	
 	protected static final Integer INT_ZERO = new Integer(0);
 	
-	public static final String UTF8 = "UTF-8"; // default encoding
+	// default encoding
+	public static final String UTF8 = "UTF-8";
 	
 	protected String hostName;
 	
@@ -299,7 +300,8 @@ public class Serve implements ServletContext, Serializable {
 	private static final ThreadLocal currentRegistry = new ThreadLocal();
 	
 	// for sessions
-	private byte[] uniqer = new byte[20]; // TODO consider configurable strength
+	// TODO consider configurable strength
+	private byte[] uniqer = new byte[20];
 	
 	private SecureRandom srandom;
 	
@@ -1475,11 +1477,8 @@ public class Serve implements ServletContext, Serializable {
 		}
 		
 		public void forward(ServletRequest _request, ServletResponse _response) throws ServletException, java.io.IOException {
-			_request.removeAttribute("javax.servlet.forward.request_uri"); // reset
-																			// in
-																			// case
-																			// of
-																			// nested
+			// reset in case of nested
+			_request.removeAttribute("javax.servlet.forward.request_uri");
 			_response.reset();
 			servlet.service(new HttpServletRequestWrapper((HttpServletRequest) _request) {
 				public java.lang.String getPathInfo() {
@@ -1570,7 +1569,8 @@ public class Serve implements ServletContext, Serializable {
 		}
 		
 		public void include(ServletRequest _request, ServletResponse _response) throws ServletException, java.io.IOException {
-			_request.removeAttribute("javax.servlet.include.request_uri"); // reset
+			_request.removeAttribute("javax.servlet.include.request_uri");
+			// reset
 			// in
 			// case
 			// of
@@ -1696,18 +1696,7 @@ public class Serve implements ServletContext, Serializable {
 								if (conn.websocketUpgrade)
 									conn.asyncMode = null;
 								conn.joinAsync();
-							} /*
-								 * else if (conn.websocketUpgrade) {
-								 * try {
-								 * conn.keepAlive = false;
-								 * //conn.socket.getChannel().close(); // TODO
-								 * perhaps use normal close call
-								 * //conn.socket = null;
-								 * } catch(Exception e) {
-								 * 
-								 * }
-								 * }
-								 */
+							}
 						} else {
 							long nd = conn.asyncTimeout - ct;
 							if (nd < d)
@@ -1715,14 +1704,16 @@ public class Serve implements ServletContext, Serializable {
 						}
 					}
 				}
-				if (stopped && connections.size() == 0) // TODO stopped can be
+				if (stopped && connections.size() == 0)
+					// TODO stopped can be
 					// enough, since clear
 					// method
 					break;
 				try {
 					sleep(d);
 				} catch (InterruptedException ie) {
-					stopped = true; // not thread safe
+					// not thread safe
+					stopped = true;
 				}
 			}
 		}
@@ -1733,7 +1724,7 @@ public class Serve implements ServletContext, Serializable {
 		
 		public static final String serverVersion = "Version 1.115 (nightly)";
 		
-		public static final String serverUrl = "http://tjws.sourceforge.net";
+		public static final String serverUrl = "http://tjws.sourceforge.net/ or https://github.com/rslakra/TJWS2";
 		
 		public static final String serverIdHtml = "<ADDRESS><A HREF=\"" + serverUrl + "\">" + serverName + " " + serverVersion + "</A></ADDRESS>";
 	}
@@ -1920,19 +1911,17 @@ public class Serve implements ServletContext, Serializable {
 		// TODO consider creation an instance per thread in a pool, thread
 		// memory can be used
 		
-		private final SimpleDateFormat expdatefmt = new SimpleDateFormat("EEE, dd-MMM-yyyy HH:mm:ss 'GMT'", Locale.US); // used
-																														// for
-		// cookie
+		// used for cookie
+		private final SimpleDateFormat expdatefmt = new SimpleDateFormat("EEE, dd-MMM-yyyy HH:mm:ss 'GMT'", Locale.US);
 		
-		private final SimpleDateFormat rfc850DateFmt = new SimpleDateFormat("EEEEEE, dd-MMM-yy HH:mm:ss 'GMT'", Locale.US); // rfc850-date
+		// rfc850-date
+		private final SimpleDateFormat rfc850DateFmt = new SimpleDateFormat("EEEEEE, dd-MMM-yy HH:mm:ss 'GMT'", Locale.US);
 		
-		private final SimpleDateFormat headerdateformat = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss 'GMT'", Locale.US); // rfc1123-date
+		// rfc1123-date
+		private final SimpleDateFormat headerdateformat = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss 'GMT'", Locale.US);
 		
-		private final SimpleDateFormat asciiDateFmt = new SimpleDateFormat("EEE MMM d HH:mm:ss yyyy", Locale.US); // ASCII
-																													// date,
-																													// used
-																													// in
-		// headers
+		// ASCII date, used in headers
+		private final SimpleDateFormat asciiDateFmt = new SimpleDateFormat("EEE MMM d HH:mm:ss yyyy", Locale.US);
 		
 		private static final TimeZone tz = TimeZone.getTimeZone("GMT");
 		
@@ -3540,10 +3529,7 @@ public class Serve implements ServletContext, Serializable {
 								String lan = lst.nextToken();
 								int di = lan.indexOf('-');
 								if (di < 0)
-									ts.add(new LocaleWithWeight(new Locale(lan.trim()) /*
-																						 * 1.
-																						 * 4
-																						 */, w));
+									ts.add(new LocaleWithWeight(new Locale(lan.trim()), w));
 								else
 									ts.add(new LocaleWithWeight(new Locale(lan.substring(0, di), lan.substring(di + 1).trim().toUpperCase()), w));
 							}
@@ -3969,11 +3955,8 @@ public class Serve implements ServletContext, Serializable {
 				Enumeration he = resHeaderNames.keys();
 				while (he.hasMoreElements()) {
 					String name = (String) he.nextElement();
-					if (CONNECTION.equals(name) || KEEPALIVE.equals(name)) // skip
-																			// header
-																			// until
-																			// make
-																			// decision
+					// skip header until make decision
+					if (CONNECTION.equals(name) || KEEPALIVE.equals(name))
 						continue;
 					Object o = resHeaderNames.get(name);
 					if (o instanceof String) {

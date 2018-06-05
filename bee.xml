@@ -96,7 +96,9 @@
 	</expression>
 
 
+	<!-- Check Library -->
 	<target name="check lib" dir="TJWS_HOME" comment="assure build directory">
+		<echo>Checking Libraries ...</echo>
 		<dependency>
 			<expression>
 				<operator name="eq">
@@ -132,8 +134,10 @@
 		</if>
 	</expression>
 
+	<!-- Check Compatibility -->
 	<target name="check compatibility" dir="TJWS_HOME"
 		comment="assure that compatibility jar is built">
+		<echo>Checking Compatibility ...</echo>
 		<dependency>
 			<function name="anynewer">
 				<parameter value="./compatibility/bee.xml" type="path" />
@@ -203,6 +207,7 @@
 	</expression>
 
 	<target name="help">
+		<echo>Help</echo>
 		<echo>
 			//////////////////// TJWS Build Process /////////////////////////
 			type:
@@ -212,11 +217,13 @@
 		</echo>
 	</target>
 
+	<!-- Compile -->
 	<target name="compile" dir="TJWS_HOME" comment="Core module compilation">
+		<echo>Compiling ...</echo>
 		<dependency target="check lib" />
 		<dependency target="check compatibility" />
 		<dependency variable="tjws sources" />
-		<echo>Compiling core...</echo>
+		<echo>Compiling Core...</echo>
 		<task exec="javac">
 			<parameter value="-classpath" />
 			<parameter variable="class path" />
@@ -303,7 +310,7 @@
 	<target name="idl" dir="TJWS_HOME"
 		comment="IDL files creation for JNDI (app module)">
 		<dependency variable="IDL sources" />
-		<echo>IDL compilation...</echo>
+		<echo>IDL Compilation...</echo>
 		<task name="idl compilation" exec="idl compiler">
 			<parameter value="-keep" />
 			<parameter value="-fall" />
@@ -319,6 +326,7 @@
 	<variable name="j2ee sources" />
 
 	<target name="create j2ee sources">
+		<echo>Creating J2EE Source ...</echo>
 		<dependency value="true" />
 		<block>
 			<expression variable="j2ee sources">
@@ -361,11 +369,12 @@
 
 	<target name="compile j2ee" dir="TJWS_HOME"
 		comment="J2EE deployer and supporter compilation">
+		<echo>Compiling J2EE ...</echo>
 		<dependency target="compile" />
 		<dependency target="idl" />
 		<dependency target="create j2ee sources" process_only="yes" />
 		<dependency variable="j2ee sources" />
-		<echo>Compiling J2EE...</echo>
+		<echo>Compiling J2EE Source ...</echo>
 		<task exec="javac">
 			<parameter value="-classpath" />
 			<parameter variable="j2ee class path" />

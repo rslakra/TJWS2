@@ -68,12 +68,12 @@ public class Utils {
 		Calendar cal = new GregorianCalendar();
 		cal.setTime(date);
 		long dateTime = date.getTime();
-		if(dateTime == -1L)
+		if (dateTime == -1L)
 			return "------------";
 		long nowTime = (new Date()).getTime();
 		final String[] months = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
 		String part1 = months[cal.get(Calendar.MONTH)] + Fmt.fmt(cal.get(Calendar.DATE), 3);
-		if(Math.abs(nowTime - dateTime) < 183L * 24L * 60L * 60L * 1000L)
+		if (Math.abs(nowTime - dateTime) < 183L * 24L * 60L * 60L * 1000L)
 			return part1 + Fmt.fmt(cal.get(Calendar.HOUR_OF_DAY), 3) + ":" + Fmt.fmt(cal.get(Calendar.MINUTE), 2, Fmt.ZF);
 		else
 			return part1 + Fmt.fmt(cal.get(Calendar.YEAR), 6);
@@ -81,7 +81,7 @@ public class Utils {
 	
 	/// Returns "s" for numbers other than one, and "" for one.
 	public static String pluralStr(long n) {
-		if(n == 1)
+		if (n == 1)
 			return "";
 		else
 			return "s";
@@ -100,7 +100,8 @@ public class Utils {
 	/// Returns a string approximately describing a given time interval.
 	// @param interval the interval, in milliseconds
 	public static String intervalStr(long interval) {
-		long decades, years, months, weeks, days, hours, minutes, seconds, millis;
+		long decades, years, months, weeks, days, hours, minutes, seconds,
+						millis;
 		
 		decades = interval / INT_DECADE;
 		interval -= decades * INT_DECADE;
@@ -120,43 +121,43 @@ public class Utils {
 		interval -= seconds * INT_SECOND;
 		millis = interval;
 		
-		if(decades > 0)
-			if(years == 0)
+		if (decades > 0)
+			if (years == 0)
 				return decades + " decade" + pluralStr(decades);
 			else
 				return decades + " decade" + pluralStr(decades) + ", " + years + " years" + pluralStr(years);
-		else if(years > 0)
-			if(months == 0)
+		else if (years > 0)
+			if (months == 0)
 				return years + " year" + pluralStr(years);
 			else
 				return years + " year" + pluralStr(years) + ", " + months + " month" + pluralStr(months);
-		else if(months > 0)
-			if(weeks == 0)
+		else if (months > 0)
+			if (weeks == 0)
 				return months + " month" + pluralStr(months);
 			else
 				return months + " month" + pluralStr(months) + ", " + weeks + " week" + pluralStr(weeks);
-		else if(weeks > 0)
-			if(days == 0)
+		else if (weeks > 0)
+			if (days == 0)
 				return weeks + " week" + pluralStr(weeks);
 			else
 				return weeks + " week" + pluralStr(weeks) + ", " + days + " day" + pluralStr(days);
-		else if(days > 0)
-			if(hours == 0)
+		else if (days > 0)
+			if (hours == 0)
 				return days + " day" + pluralStr(days);
 			else
 				return days + " day" + pluralStr(days) + ", " + hours + " hour" + pluralStr(hours);
-		else if(hours > 0)
-			if(minutes == 0)
+		else if (hours > 0)
+			if (minutes == 0)
 				return hours + " hour" + pluralStr(hours);
 			else
 				return hours + " hour" + pluralStr(hours) + ", " + minutes + " minute" + pluralStr(minutes);
-		else if(minutes > 0)
-			if(seconds == 0)
+		else if (minutes > 0)
+			if (seconds == 0)
 				return minutes + " minute" + pluralStr(minutes);
 			else
 				return minutes + " minute" + pluralStr(minutes) + ", " + seconds + " second" + pluralStr(seconds);
-		else if(seconds > 0)
-			if(millis == 0)
+		else if (seconds > 0)
+			if (millis == 0)
 				return seconds + " second" + pluralStr(seconds);
 			else
 				return seconds + " second" + pluralStr(seconds) + ", " + millis + " millisecond" + pluralStr(millis);
@@ -174,8 +175,8 @@ public class Utils {
 	// entirely of characters from charSet, starting at the given index.
 	public static int strSpan(String str, String charSet, int fromIdx) {
 		int i;
-		for(i = fromIdx; i < str.length(); ++i)
-			if(charSet.indexOf(str.charAt(i)) == -1)
+		for (i = fromIdx; i < str.length(); ++i)
+			if (charSet.indexOf(str.charAt(i)) == -1)
 				break;
 		return i - fromIdx;
 	}
@@ -190,8 +191,8 @@ public class Utils {
 	// entirely of characters NOT from charSet, starting at the given index.
 	public static int strCSpan(String str, String charSet, int fromIdx) {
 		int i;
-		for(i = fromIdx; i < str.length(); ++i)
-			if(charSet.indexOf(str.charAt(i)) != -1)
+		for (i = fromIdx; i < str.length(); ++i)
+			if (charSet.indexOf(str.charAt(i)) != -1)
 				break;
 		return i - fromIdx;
 	}
@@ -199,30 +200,33 @@ public class Utils {
 	/// Checks whether a string matches a given wildcard pattern.
 	// Only does ? and *, and multiple patterns separated by |.
 	public static boolean match(String pattern, String string) {
-		for(int p = 0;; ++p) {
-			for(int s = 0;; ++p, ++s) {
+		for (int p = 0;; ++p) {
+			for (int s = 0;; ++p, ++s) {
 				boolean sEnd = (s >= string.length());
 				boolean pEnd = (p >= pattern.length() || pattern.charAt(p) == '|');
-				if(sEnd && pEnd)
+				if (sEnd && pEnd)
 					return true;
-				if(sEnd || pEnd)
+				if (sEnd || pEnd)
 					break;
-				if(pattern.charAt(p) == '?')
+				if (pattern.charAt(p) == '?')
 					continue;
-				if(pattern.charAt(p) == '*') {
+				if (pattern.charAt(p) == '*') {
 					int i;
 					++p;
-					for(i = string.length(); i >= s; --i)
-						if(match(pattern.substring(p),
-								string.substring(i))) /* not quite right */
+					for (i = string.length(); i >= s; --i)
+						if (match(pattern.substring(p), string.substring(i))) /*
+																				 * not
+																				 * quite
+																				 * right
+																				 */
 							return true;
 					break;
 				}
-				if(pattern.charAt(p) != string.charAt(s))
+				if (pattern.charAt(p) != string.charAt(s))
 					break;
 			}
 			p = pattern.indexOf('|', p);
-			if(p == -1)
+			if (p == -1)
 				return false;
 		}
 	}
@@ -238,7 +242,7 @@ public class Utils {
 	/// Returns the length of the initial segment of str1 that equals str2.
 	public static int sameSpan(String str1, String str2) {
 		int i;
-		for(i = 0; i < str1.length() && i < str2.length() && str1.charAt(i) == str2.charAt(i); ++i)
+		for (i = 0; i < str1.length() && i < str2.length() && str1.charAt(i) == str2.charAt(i); ++i)
 			;
 		return i;
 	}
@@ -246,8 +250,8 @@ public class Utils {
 	/// Returns the number of times the given character appears in the string.
 	public static int charCount(String str, char c) {
 		int n = 0;
-		for(int i = 0; i < str.length(); ++i)
-			if(str.charAt(i) == c)
+		for (int i = 0; i < str.length(); ++i)
+			if (str.charAt(i) == c)
 				++n;
 		return n;
 	}
@@ -258,7 +262,7 @@ public class Utils {
 		StringTokenizer st = new StringTokenizer(str);
 		int n = st.countTokens();
 		String[] strs = new String[n];
-		for(int i = 0; i < n; ++i)
+		for (int i = 0; i < n; ++i)
 			strs[i] = st.nextToken();
 		return strs;
 	}
@@ -269,15 +273,15 @@ public class Utils {
 	public static String[] splitStr(String str, char delim) {
 		int n = 1;
 		int index = -1;
-		while(true) {
+		while (true) {
 			index = str.indexOf(delim, index + 1);
-			if(index == -1)
+			if (index == -1)
 				break;
 			++n;
 		}
 		String[] strs = new String[n];
 		index = -1;
-		for(int i = 0; i < n - 1; ++i) {
+		for (int i = 0; i < n - 1; ++i) {
 			int nextIndex = str.indexOf(delim, index + 1);
 			strs[i] = str.substring(index + 1, nextIndex);
 			index = nextIndex;
@@ -290,8 +294,8 @@ public class Utils {
 	// separated by spaces.
 	public static String flattenStrarr(String[] strs) {
 		StringBuffer sb = new StringBuffer();
-		for(int i = 0; i < strs.length; ++i) {
-			if(i > 0)
+		for (int i = 0; i < strs.length; ++i) {
+			if (i > 0)
 				sb.append(' ');
 			sb.append(strs[i]);
 		}
@@ -303,9 +307,9 @@ public class Utils {
 	// common enough that it's worth making a special case.
 	public static void sortStrings(String[] strings) {
 		// Just does a bubblesort.
-		for(int i = 0; i < strings.length - 1; ++i) {
-			for(int j = i + 1; j < strings.length; ++j) {
-				if(strings[i].compareTo(strings[j]) > 0) {
+		for (int i = 0; i < strings.length - 1; ++i) {
+			for (int j = i + 1; j < strings.length; ++j) {
+				if (strings[i].compareTo(strings[j]) > 0) {
 					String t = strings[i];
 					strings[i] = strings[j];
 					strings[j] = t;
@@ -317,8 +321,8 @@ public class Utils {
 	/// Locates a String in an array of Strings.
 	// Returns -1 if the String is not found.
 	public static int indexOfString(String[] strings, String string) {
-		for(int i = 0; i < strings.length; ++i)
-			if(string.equals(strings[i]))
+		for (int i = 0; i < strings.length; ++i)
+			if (string.equals(strings[i]))
 				return i;
 		return -1;
 	}
@@ -326,18 +330,18 @@ public class Utils {
 	/// Locates a String in an array of Strings, ignoring case.
 	// Returns -1 if the String is not found.
 	public static int indexOfStringIgnoreCase(String[] strings, String string) {
-		for(int i = 0; i < strings.length; ++i)
-			if(string.equalsIgnoreCase(strings[i]))
+		for (int i = 0; i < strings.length; ++i)
+			if (string.equalsIgnoreCase(strings[i]))
 				return i;
 		return -1;
 	}
 	
 	/// Compares two arrays of Strings for equality.
 	public static boolean equalsStrings(String[] strings1, String[] strings2) {
-		if(strings1.length != strings2.length)
+		if (strings1.length != strings2.length)
 			return false;
-		for(int i = 0; i < strings1.length; ++i)
-			if(!strings1[i].equals(strings2[i]))
+		for (int i = 0; i < strings1.length; ++i)
+			if (!strings1[i].equals(strings2[i]))
 				return false;
 		return true;
 	}
@@ -345,11 +349,11 @@ public class Utils {
 	/// Returns the number a raised to the power of b. Long version
 	// of Math.pow(). Throws ArithmeticException if b is negative.
 	public static long pow(long a, long b) throws ArithmeticException {
-		if(b < 0)
+		if (b < 0)
 			throw new ArithmeticException();
 		long r = 1;
-		while(b != 0) {
-			if(odd(b))
+		while (b != 0) {
+			if (odd(b))
 				r *= a;
 			b >>>= 1;
 			a *= a;
@@ -361,7 +365,7 @@ public class Utils {
 	public static int parseInt(String str, int def) {
 		try {
 			return Integer.parseInt(str);
-		} catch(Exception e) {
+		} catch (Exception e) {
 			return def;
 		}
 	}
@@ -370,7 +374,7 @@ public class Utils {
 	public static long parseLong(String str, long def) {
 		try {
 			return Long.parseLong(str);
-		} catch(Exception e) {
+		} catch (Exception e) {
 			return def;
 		}
 	}
@@ -389,92 +393,92 @@ public class Utils {
 	// int[][]: { { 0, 1, 2 }, { 3, 4, 5 } }
 	// </PRE></CODE></BLOCKQUOTE>
 	public static String arrayToString(Object o) {
-		if(o == null)
+		if (o == null)
 			return "null";
 		String cl = o.getClass().getName();
-		if(!cl.startsWith("["))
+		if (!cl.startsWith("["))
 			// It's not an array; just call its toString method.
 			return o.toString();
 		StringBuffer sb = new StringBuffer("{ ");
-		if(o instanceof byte[]) {
+		if (o instanceof byte[]) {
 			byte[] ba = (byte[]) o;
-			for(int i = 0; i < ba.length; ++i) {
-				if(i > 0)
+			for (int i = 0; i < ba.length; ++i) {
+				if (i > 0)
 					sb.append(", ");
 				sb.append("(byte)");
 				sb.append(ba[i]);
 			}
-		} else if(o instanceof char[]) {
+		} else if (o instanceof char[]) {
 			char[] ca = (char[]) o;
-			for(int i = 0; i < ca.length; ++i) {
-				if(i > 0)
+			for (int i = 0; i < ca.length; ++i) {
+				if (i > 0)
 					sb.append(", ");
 				sb.append("'");
 				sb.append(ca[i]);
 				sb.append("'");
 			}
-		} else if(o instanceof short[]) {
+		} else if (o instanceof short[]) {
 			short[] sa = (short[]) o;
-			for(int i = 0; i < sa.length; ++i) {
-				if(i > 0)
+			for (int i = 0; i < sa.length; ++i) {
+				if (i > 0)
 					sb.append(", ");
 				sb.append("(short)");
 				sb.append(sa[i]);
 			}
-		} else if(o instanceof int[]) {
+		} else if (o instanceof int[]) {
 			int[] ia = (int[]) o;
-			for(int i = 0; i < ia.length; ++i) {
-				if(i > 0)
+			for (int i = 0; i < ia.length; ++i) {
+				if (i > 0)
 					sb.append(", ");
 				sb.append(ia[i]);
 			}
-		} else if(o instanceof long[]) {
+		} else if (o instanceof long[]) {
 			long[] la = (long[]) o;
-			for(int i = 0; i < la.length; ++i) {
-				if(i > 0)
+			for (int i = 0; i < la.length; ++i) {
+				if (i > 0)
 					sb.append(", ");
 				sb.append(la[i]);
 				sb.append("L");
 			}
-		} else if(o instanceof float[]) {
+		} else if (o instanceof float[]) {
 			float[] fa = (float[]) o;
-			for(int i = 0; i < fa.length; ++i) {
-				if(i > 0)
+			for (int i = 0; i < fa.length; ++i) {
+				if (i > 0)
 					sb.append(", ");
 				sb.append(fa[i]);
 				sb.append("F");
 			}
-		} else if(o instanceof double[]) {
+		} else if (o instanceof double[]) {
 			double[] da = (double[]) o;
-			for(int i = 0; i < da.length; ++i) {
-				if(i > 0)
+			for (int i = 0; i < da.length; ++i) {
+				if (i > 0)
 					sb.append(", ");
 				sb.append(da[i]);
 				sb.append("D");
 			}
-		} else if(o instanceof String) {
+		} else if (o instanceof String) {
 			// Special-case Strings so we can surround them with quotes.
 			String[] sa = (String[]) o;
-			for(int i = 0; i < sa.length; ++i) {
-				if(i > 0)
+			for (int i = 0; i < sa.length; ++i) {
+				if (i > 0)
 					sb.append(", ");
 				sb.append("\"");
 				sb.append(sa[i]);
 				sb.append("\"");
 			}
-		} else if(cl.startsWith("[L")) {
+		} else if (cl.startsWith("[L")) {
 			// Some random class.
 			Object[] oa = (Object[]) o;
-			for(int i = 0; i < oa.length; ++i) {
-				if(i > 0)
+			for (int i = 0; i < oa.length; ++i) {
+				if (i > 0)
 					sb.append(", ");
 				sb.append(oa[i]);
 			}
-		} else if(cl.startsWith("[[")) {
+		} else if (cl.startsWith("[[")) {
 			// Nested arrays.
 			Object[] aa = (Object[]) o;
-			for(int i = 0; i < aa.length; ++i) {
-				if(i > 0)
+			for (int i = 0; i < aa.length; ++i) {
+				if (i > 0)
 					sb.append(", ");
 				sb.append(arrayToString(aa[i]));
 			}
@@ -489,23 +493,23 @@ public class Utils {
 	// of type descriptors at compile time.
 	public static boolean instanceOf(Object o, Class cl) {
 		// Null check.
-		if(o == null || cl == null)
+		if (o == null || cl == null)
 			return false;
 		Class ocl = o.getClass();
 		// Check if they are the same class.
-		if(ocl.equals(cl))
+		if (ocl.equals(cl))
 			return true;
 		// If the class is not itself an interface, then check its interfaces.
-		if(!cl.isInterface()) {
+		if (!cl.isInterface()) {
 			Class ifs[] = cl.getInterfaces();
-			for(int i = 0; i < ifs.length; ++i)
-				if(instanceOf(o, ifs[i]))
+			for (int i = 0; i < ifs.length; ++i)
+				if (instanceOf(o, ifs[i]))
 					return true;
 		}
 		// And check supeclasses.
 		Class scl = cl.getSuperclass();
-		if(scl != null)
-			if(instanceOf(o, scl))
+		if (scl != null)
+			if (instanceOf(o, scl))
 				return true;
 		// Guess not.
 		return false;
@@ -536,8 +540,8 @@ public class Utils {
 		// There are faster ways to do this, all the way up to looking
 		// up bytes in a 256-element table. But this is not too bad.
 		int count = 0;
-		while(n != 0) {
-			if(odd(n))
+		while (n != 0) {
+			if (odd(n))
 				++count;
 			n >>>= 1;
 		}
@@ -548,19 +552,19 @@ public class Utils {
 	// standard version catches and ignores IOExceptions from below.
 	// This version sends them on to the caller.
 	public static int read(InputStream in, byte[] b, int off, int len) throws IOException {
-		if(len <= 0)
+		if (len <= 0)
 			return 0;
 		int c = in.read();
-		if(c == -1)
+		if (c == -1)
 			return -1;
-		if(b != null)
+		if (b != null)
 			b[off] = (byte) c;
 		int i;
-		for(i = 1; i < len; ++i) {
+		for (i = 1; i < len; ++i) {
 			c = in.read();
-			if(c == -1)
+			if (c == -1)
 				break;
-			if(b != null)
+			if (b != null)
 				b[off + i] = (byte) c;
 		}
 		return i;
@@ -571,9 +575,9 @@ public class Utils {
 	// @return -1 on EOF, otherwise len
 	public static int readFully(InputStream in, byte[] b, int off, int len) throws IOException {
 		int l;
-		for(l = 0; l < len;) {
+		for (l = 0; l < len;) {
 			int r = read(in, b, off + l, len - l);
-			if(r == -1)
+			if (r == -1)
 				return -1;
 			l += r;
 		}
@@ -586,10 +590,10 @@ public class Utils {
 		URL url = new URL(context, urlStr);
 		String fileStr = url.getFile();
 		int i = fileStr.indexOf('?');
-		if(i != -1)
+		if (i != -1)
 			fileStr = fileStr.substring(0, i);
 		url = new URL(url.getProtocol(), url.getHost(), url.getPort(), fileStr);
-		if((!fileStr.endsWith("/")) && urlStrIsDir(url.toExternalForm())) {
+		if ((!fileStr.endsWith("/")) && urlStrIsDir(url.toExternalForm())) {
 			fileStr = fileStr + "/";
 			url = new URL(url.getProtocol(), url.getHost(), url.getPort(), fileStr);
 		}
@@ -606,18 +610,18 @@ public class Utils {
 	// if the URL points to a directory, you get that directory; if the
 	// URL points to a file, you get the directory the file is in.
 	public static String baseUrlStr(String urlStr) {
-		if(urlStr.endsWith("/"))
+		if (urlStr.endsWith("/"))
 			return urlStr;
-		if(urlStrIsDir(urlStr))
+		if (urlStrIsDir(urlStr))
 			return urlStr + "/";
 		return urlStr.substring(0, urlStr.lastIndexOf('/') + 1);
 	}
 	
 	/// Makes sure if a URL is a directory, it ends with a slash.
 	public static String fixDirUrlStr(String urlStr) {
-		if(urlStr.endsWith("/"))
+		if (urlStr.endsWith("/"))
 			return urlStr;
-		if(urlStrIsDir(urlStr))
+		if (urlStrIsDir(urlStr))
 			return urlStr + "/";
 		return urlStr;
 	}
@@ -631,13 +635,13 @@ public class Utils {
 	// indirectly and heuristically.
 	public static boolean urlStrIsDir(String urlStr) {
 		// If it ends with a slash, it's probably a directory.
-		if(urlStr.endsWith("/"))
+		if (urlStr.endsWith("/"))
 			return true;
 		
 		// If the last component has a dot, it's probably not a directory.
 		int lastSlash = urlStr.lastIndexOf('/');
 		int lastPeriod = urlStr.lastIndexOf('.');
-		if(lastPeriod != -1 && (lastSlash == -1 || lastPeriod > lastSlash))
+		if (lastPeriod != -1 && (lastSlash == -1 || lastPeriod > lastSlash))
 			return false;
 			
 		// Otherwise, append a slash and try to connect. This is
@@ -649,7 +653,7 @@ public class Utils {
 			f.close();
 			// Worked fine - it's probably a directory.
 			return true;
-		} catch(Exception e) {
+		} catch (Exception e) {
 			// Got an error - must not be a directory.
 			return false;
 		}
@@ -657,7 +661,7 @@ public class Utils {
 	
 	// Figures out whether a URL is absolute or not.
 	public static boolean urlStrIsAbsolute(String urlStr) {
-		if(urlStr.startsWith("/") || urlStr.indexOf(":/") != -1)
+		if (urlStr.startsWith("/") || urlStr.indexOf(":/") != -1)
 			return true;
 		// Should handle :8000/ and such too.
 		return false;
@@ -674,14 +678,14 @@ public class Utils {
 	public static String urlDecoder(String encoded) {
 		StringBuffer decoded = new StringBuffer();
 		int len = encoded.length();
-		for(int i = 0; i < len; ++i) {
-			if(encoded.charAt(i) == '%' && i + 2 < len) {
+		for (int i = 0; i < len; ++i) {
+			if (encoded.charAt(i) == '%' && i + 2 < len) {
 				int d1 = Character.digit(encoded.charAt(i + 1), 16);
 				int d2 = Character.digit(encoded.charAt(i + 2), 16);
-				if(d1 != -1 && d2 != -1)
+				if (d1 != -1 && d2 != -1)
 					decoded.append((char) ((d1 << 4) + d2));
 				i += 2;
-			} else if(encoded.charAt(i) == '+')
+			} else if (encoded.charAt(i) == '+')
 				decoded.append(' ');
 			else
 				decoded.append(encoded.charAt(i));
@@ -704,8 +708,8 @@ public class Utils {
 		int i, phase = 0;
 		char c = 0;
 		
-		for(i = 0; i < src.length; ++i) {
-			switch(phase) {
+		for (i = 0; i < src.length; ++i) {
+			switch (phase) {
 				case 0:
 					c = b64EncodeTable[(src[i] >> 2) & 0x3f];
 					encoded.append(c);
@@ -730,37 +734,37 @@ public class Utils {
 			}
 		}
 		/* Pad with ='s. */
-		while(phase++ < 3)
+		while (phase++ < 3)
 			encoded.append('=');
 		return encoded.toString();
 	}
 	
-	private static char b64EncodeTable[] = { 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H',  // 00-07
-			'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P',  // 08-15
-			'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X',  // 16-23
-			'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f',  // 24-31
-			'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n',  // 32-39
-			'o', 'p', 'q', 'r', 's', 't', 'u', 'v',  // 40-47
-			'w', 'x', 'y', 'z', '0', '1', '2', '3',  // 48-55
-			'4', '5', '6', '7', '8', '9', '+', '/'   // 56-63
+	private static char b64EncodeTable[] = { 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', // 00-07
+					'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', // 08-15
+					'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', // 16-23
+					'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f', // 24-31
+					'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', // 32-39
+					'o', 'p', 'q', 'r', 's', 't', 'u', 'v', // 40-47
+					'w', 'x', 'y', 'z', '0', '1', '2', '3', // 48-55
+					'4', '5', '6', '7', '8', '9', '+', '/' // 56-63
 	};
 	
-	private static int b64DecodeTable[] = { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  // 00-0F
-			-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  // 10-1F
-			-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 62, -1, -1, -1, 63,  // 20-2F
-			52, 53, 54, 55, 56, 57, 58, 59, 60, 61, -1, -1, -1, -1, -1, -1,  // 30-3F
-			-1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14,  // 40-4F
-			15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, -1, -1, -1, -1, -1,  // 50-5F
-			-1, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40,  // 60-6F
-			41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, -1, -1, -1, -1, -1,  // 70-7F
-			-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  // 80-8F
-			-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  // 90-9F
-			-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  // A0-AF
-			-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  // B0-BF
-			-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  // C0-CF
-			-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  // D0-DF
-			-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  // E0-EF
-			-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1   // F0-FF
+	private static int b64DecodeTable[] = { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, // 00-0F
+					-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, // 10-1F
+					-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 62, -1, -1, -1, 63, // 20-2F
+					52, 53, 54, 55, 56, 57, 58, 59, 60, 61, -1, -1, -1, -1, -1, -1, // 30-3F
+					-1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, // 40-4F
+					15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, -1, -1, -1, -1, -1, // 50-5F
+					-1, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, // 60-6F
+					41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, -1, -1, -1, -1, -1, // 70-7F
+					-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, // 80-8F
+					-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, // 90-9F
+					-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, // A0-AF
+					-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, // B0-BF
+					-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, // C0-CF
+					-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, // D0-DF
+					-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, // E0-EF
+					-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 // F0-FF
 	};
 	
 	/// A base-64 encoder that takes a String, for convenience.
@@ -772,8 +776,8 @@ public class Utils {
 	
 	/// Check if an array contains a given element.
 	public static boolean arraycontains(Object[] array, Object element) {
-		for(int i = 0; i < array.length; ++i)
-			if(array[i].equals(element))
+		for (int i = 0; i < array.length; ++i)
+			if (array[i].equals(element))
 				return true;
 		return false;
 	}
@@ -787,9 +791,9 @@ public class Utils {
 	public static int system(String cmd) {
 		try {
 			return runCommand(cmd).waitFor();
-		} catch(IOException e) {
+		} catch (IOException e) {
 			return -1;
-		} catch(InterruptedException e) {
+		} catch (InterruptedException e) {
 			return -1;
 		}
 	}
@@ -808,7 +812,7 @@ public class Utils {
 	public static InputStream popenr(String cmd) {
 		try {
 			return runCommand(cmd).getInputStream();
-		} catch(IOException e) {
+		} catch (IOException e) {
 			return null;
 		}
 	}
@@ -820,7 +824,7 @@ public class Utils {
 	public static OutputStream popenw(String cmd) {
 		try {
 			return runCommand(cmd).getOutputStream();
-		} catch(IOException e) {
+		} catch (IOException ex) {
 			return null;
 		}
 	}
@@ -849,7 +853,7 @@ public class Utils {
 	public static void copyStream(InputStream in, OutputStream out) throws IOException {
 		byte[] buf = new byte[4096];
 		int len;
-		while((len = in.read(buf)) != -1)
+		while ((len = in.read(buf)) != -1)
 			out.write(buf, 0, len);
 	}
 	
@@ -857,7 +861,7 @@ public class Utils {
 	public static void copyStream(Reader in, Writer out) throws IOException {
 		char[] buf = new char[4096];
 		int len;
-		while((len = in.read(buf)) != -1)
+		while ((len = in.read(buf)) != -1)
 			out.write(buf, 0, len);
 	}
 	
@@ -866,8 +870,8 @@ public class Utils {
 		byte[] buf1 = new byte[4096];
 		char[] buf2 = new char[4096];
 		int len, i;
-		while((len = in.read(buf1)) != -1) {
-			for(i = 0; i < len; ++i)
+		while ((len = in.read(buf1)) != -1) {
+			for (i = 0; i < len; ++i)
 				buf2[i] = (char) buf1[i];
 			out.write(buf2, 0, len);
 		}
@@ -878,8 +882,8 @@ public class Utils {
 		char[] buf1 = new char[4096];
 		byte[] buf2 = new byte[4096];
 		int len, i;
-		while((len = in.read(buf1)) != -1) {
-			for(i = 0; i < len; ++i)
+		while ((len = in.read(buf1)) != -1) {
+			for (i = 0; i < len; ++i)
 				buf2[i] = (byte) buf1[i];
 			out.write(buf2, 0, len);
 		}

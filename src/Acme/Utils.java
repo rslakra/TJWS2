@@ -831,8 +831,7 @@ public class Utils {
 	 * bytes (up to three of them) to <var>destination</var>. The source and
 	 * destination arrays can be manipulated anywhere along their length by
 	 * specifying <var>srcOffset</var> and <var>destOffset</var>. This method
-	 * does not
-	 * check to make sure your arrays are large enough to accomodate
+	 * does not check to make sure your arrays are large enough to accomodate
 	 * <var>srcOffset</var> + 4 for the <var>source</var> array or
 	 * <var>destOffset</var> + 3
 	 * for the <var>destination</var> array. This method returns the actual
