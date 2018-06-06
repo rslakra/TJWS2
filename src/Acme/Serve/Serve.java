@@ -186,6 +186,9 @@ import Acme.Utils;
 // Inheritance can extend usage of this server
 public class Serve implements ServletContext, Serializable {
 	
+	/** serialVersionUID */
+	private static final long serialVersionUID = 1L;
+	
 	public static final String ARG_PORT = "port";
 	public static final String ARG_THROTTLES = "throttles";
 	public static final String ARG_SERVLETS = "servlets";
@@ -467,8 +470,9 @@ public class Serve implements ServletContext, Serializable {
 			log("TJWS: Class not found: " + className);
 			ClassLoader cl = getClass().getClassLoader();
 			log("TJWS: Class loader: " + cl);
-			if (cl instanceof java.net.URLClassLoader)
+			if (cl instanceof java.net.URLClassLoader) {
 				log("TJWS: CP: " + java.util.Arrays.asList(((java.net.URLClassLoader) cl).getURLs()));
+			}
 		} catch (ClassCastException e) {
 			log("TJWS: Servlet class doesn't implement javax.servlet.Servlet: " + e.getMessage());
 		} catch (InstantiationException e) {
@@ -654,7 +658,7 @@ public class Serve implements ServletContext, Serializable {
 	public void addDefaultServlets(String cgi) {
 		try {
 			addDefaultServlets(cgi, null);
-		} catch (IOException ioe) {
+		} catch (IOException ex) {
 			/* ignore, makes sense only for throtles */
 		}
 	}
@@ -701,7 +705,12 @@ public class Serve implements ServletContext, Serializable {
 		}
 	}
 	
-	// TODO review this method and figure throttles use
+	/**
+	 * TODO review this method and figure throttles use
+	 * 
+	 * @param deployerFactory
+	 * @param throttles
+	 */
 	protected void addWarDeployer(String deployerFactory, String throttles) {
 		if (deployerFactory == null) { // try to use def
 			deployerFactory = "rogatkin.web.WarRoller";
@@ -743,6 +752,10 @@ public class Serve implements ServletContext, Serializable {
 		}
 	}
 	
+	/**
+	 * 
+	 * @return
+	 */
 	protected File getPersistentFile() {
 		return getPersistentFile(null);
 	}
@@ -1005,7 +1018,7 @@ public class Serve implements ServletContext, Serializable {
 					acceptor.destroy();
 					acceptor = null;
 				} catch (IOException ex) {
-					log(ex);
+					log("Error destroying acceptor!", ex);
 				}
 			}
 			
@@ -1029,7 +1042,7 @@ public class Serve implements ServletContext, Serializable {
 					websocketProvider.destroy();
 				} catch (Exception ex) {
 					// just in case
-					log(ex);
+					log("Error destroying websocket provider!", ex);
 				}
 			}
 		}
@@ -1806,6 +1819,10 @@ public class Serve implements ServletContext, Serializable {
 			return result.keys();
 		}
 		
+		/**
+		 * 
+		 * @return
+		 */
 		synchronized protected Map<String, String[]> createParameters() {
 			if (requestDispatcher.parameters == null) {
 				String query = getQueryString();
@@ -1864,8 +1881,8 @@ public class Serve implements ServletContext, Serializable {
 			response.reset();
 			servlet.service(new ServletRequestWrapper((HttpServletRequest) request, this), response);
 			// TODO think when response isn't actual response ServeConnection
-			// ((ServeConnection) _response).closeStreams(); // do not allow to
-			// continue
+			// ((ServeConnection) _response).closeStreams();
+			// do not allow to continue
 		}
 		
 		/**
@@ -1894,8 +1911,15 @@ public class Serve implements ServletContext, Serializable {
 						return super.getAttributeNames();
 					}
 					
+					/**
+					 * 
+					 * @param name
+					 * @return
+					 * @see javax.servlet.ServletRequestWrapper#getAttribute(java.lang.String)
+					 */
 					public Object getAttribute(String name) {
-						getAttributeNames(); // here is some overhead
+						// here is some overhead
+						getAttributeNames();
 						return super.getAttribute(name);
 					}
 					
@@ -2058,7 +2082,7 @@ public class Serve implements ServletContext, Serializable {
 	}
 	
 	public static interface Identification {
-		public static final String serverName = "D. Rogatkin's TJWS (+Android, JSR340, JSR356) https://github.com/drogatkin/TJWS2.git";
+		public static final String serverName = "D. Rogatkin's TJWS (+Android, JSR340, JSR356) https://github.com/drogatkin/TJWS2.git or https://github.com/rslakra/TJWS2.git";
 		public static final String serverVersion = "Version 1.115 (nightly)";
 		public static final String serverUrl = "http://tjws.sourceforge.net";
 		public static final String serverIdHtml = "<ADDRESS><A HREF=\"" + serverUrl + "\">" + serverName + " " + serverVersion + "</A></ADDRESS>";
@@ -2072,10 +2096,20 @@ public class Serve implements ServletContext, Serializable {
 		private Hashtable initParams;
 		private String servletName;
 		
+		/**
+		 * 
+		 * @param context
+		 */
 		public ServeConfig(ServletContext context) {
 			this(context, null, "undefined");
 		}
 		
+		/**
+		 * 
+		 * @param context
+		 * @param initParams
+		 * @param servletName
+		 */
 		public ServeConfig(ServletContext context, Hashtable initParams, String servletName) {
 			this.context = context;
 			this.initParams = initParams;
@@ -2084,7 +2118,12 @@ public class Serve implements ServletContext, Serializable {
 		
 		// Methods from ServletConfig.
 		
-		// / Returns the context for the servlet.
+		/**
+		 * Returns the context for the servlet.
+		 * 
+		 * @return
+		 * @see javax.servlet.ServletConfig#getServletContext()
+		 */
 		public ServletContext getServletContext() {
 			return context;
 		}
@@ -2144,6 +2183,7 @@ public class Serve implements ServletContext, Serializable {
 		public final static String FORWARDED_SERVER = "X-Forwarded-Server".toLowerCase();
 		
 		private static final Map EMPTYHASHTABLE = new Hashtable();
+		
 		private Socket socket;
 		private Hashtable<String, Object> sslAttributes;
 		private Serve serve;
@@ -2159,6 +2199,7 @@ public class Serve implements ServletContext, Serializable {
 		private String charEncoding; // req and resp
 		private String remoteUser;
 		private String authType;
+		
 		// HTTP/1.1 or better
 		private boolean oneOne;
 		private boolean reqMime;
@@ -2190,8 +2231,10 @@ public class Serve implements ServletContext, Serializable {
 		private MessageFormat accessLogFormat;
 		private Object[] logPlaceHolders;
 		
-		// TODO consider creation an instance per thread in a pool, thread
-		// memory can be used
+		/*
+		 * TODO consider creation an instance per thread in a pool, thread
+		 * memory can be used
+		 */
 		
 		// used for cookie
 		private final SimpleDateFormat expdatefmt = new SimpleDateFormat("EEE, dd-MMM-yyyy HH:mm:ss 'GMT'", Locale.US);
@@ -2204,22 +2247,26 @@ public class Serve implements ServletContext, Serializable {
 		
 		// ASCII date, used in headers
 		private final SimpleDateFormat asciiDateFmt = new SimpleDateFormat("EEE MMM d HH:mm:ss yyyy", Locale.US);
-		private static final TimeZone tz = TimeZone.getTimeZone("GMT");
+		private static final TimeZone timeZone = TimeZone.getTimeZone("GMT");
 		static {
-			tz.setID("GMT");
+			timeZone.setID("GMT");
 		}
 		
-		// / Constructor.
+		/**
+		 * Constructor.
+		 * 
+		 * @param socket
+		 * @param serve
+		 */
 		public ServeConnection(Socket socket, Serve serve) {
 			LogManager.debug("ServeConnection(" + socket + ", " + serve + ")");
-			// serve.log("+++++++"+this);
 			// Save arguments.
 			this.socket = socket;
 			this.serve = serve;
-			expdatefmt.setTimeZone(tz);
-			headerdateformat.setTimeZone(tz);
-			rfc850DateFmt.setTimeZone(tz);
-			asciiDateFmt.setTimeZone(tz);
+			expdatefmt.setTimeZone(timeZone);
+			headerdateformat.setTimeZone(timeZone);
+			rfc850DateFmt.setTimeZone(timeZone);
+			asciiDateFmt.setTimeZone(timeZone);
 			if (serve.isAccessLogged()) {
 				// note format string must be not null
 				accessLogFormat = new MessageFormat((String) serve.arguments.get(ARG_ACCESS_LOG_FMT));
@@ -2333,6 +2380,10 @@ public class Serve implements ServletContext, Serializable {
 		 * }
 		 */
 		
+		/**
+		 * 
+		 * @throws IOException
+		 */
 		private void restart() throws IOException {
 			// new Exception("RESTART").printStackTrace();
 			reqMethod = null;
@@ -5887,14 +5938,25 @@ public class Serve implements ServletContext, Serializable {
 		private transient HttpSessionContext sessionContext;
 		private transient List listeners;
 		
-		// TODO: check in documentation what is default inactive interval and
-		// what
-		// means 0
-		// and what is mesurement unit
+		/**
+		 * TODO: check in documentation what is default inactive interval and
+		 * what means 0 and what is mesurement unit
+		 * 
+		 * @param id
+		 * @param servletContext
+		 * @param sessionContext
+		 */
 		AcmeSession(String id, ServletContext servletContext, HttpSessionContext sessionContext) {
 			this(id, 0, servletContext, sessionContext);
 		}
 		
+		/**
+		 * 
+		 * @param id
+		 * @param inactiveInterval
+		 * @param servletContext
+		 * @param sessionContext
+		 */
 		AcmeSession(String id, int inactiveInterval, ServletContext servletContext, HttpSessionContext sessionContext) {
 			// new
 			// Exception("Session created with:
@@ -5946,8 +6008,9 @@ public class Serve implements ServletContext, Serializable {
 		}
 		
 		public Object getAttribute(String name) throws IllegalStateException {
-			if (expired)
+			if (expired) {
 				throw new IllegalStateException();
+			}
 			return get((Object) name);
 		}
 		
@@ -5985,6 +6048,7 @@ public class Serve implements ServletContext, Serializable {
 					((HttpSessionBindingListener) oldValue).valueUnbound(new HttpSessionBindingEvent(this, name));
 				}
 			}
+			
 			if (value != null) {
 				if (value instanceof HttpSessionBindingListener) {
 					((HttpSessionBindingListener) value).valueBound(new HttpSessionBindingEvent(this, name));
@@ -6052,10 +6116,10 @@ public class Serve implements ServletContext, Serializable {
 					for (int i = 0; i < this.listeners.size(); i++) {
 						try {
 							((HttpSessionListener) this.listeners.get(i)).sessionCreated(localHttpSessionEvent);
-						} catch (ClassCastException classCastException) {
+						} catch (ClassCastException ex) {
 							// servletContext.log("Wrong session listener type:"
 							// + classCastException, classCastException);
-						} catch (NullPointerException nullPointerException) {
+						} catch (NullPointerException ex) {
 							// servletContext.log("Null session listener!",
 							// nullPointerException);
 						}
@@ -6102,8 +6166,10 @@ public class Serve implements ServletContext, Serializable {
 				for (int i = 0, n = listeners.size(); i < n; i++) {
 					try {
 						((HttpSessionAttributeListener) listeners.get(i)).attributeRemoved(event);
-					} catch (ClassCastException cce) {
-					} catch (NullPointerException npe) {
+					} catch (ClassCastException ex) {
+						// ignore me!
+					} catch (NullPointerException ex) {
+						// ignore me!
 					}
 				}
 			}
@@ -6127,8 +6193,10 @@ public class Serve implements ServletContext, Serializable {
 						}
 						
 						sessionListener.attributeAdded(event);
-					} catch (ClassCastException cce) {
-					} catch (NullPointerException npe) {
+					} catch (ClassCastException ex) {
+						// ignore me!
+					} catch (NullPointerException ex) {
+						// ignore me!
 					}
 				}
 			}

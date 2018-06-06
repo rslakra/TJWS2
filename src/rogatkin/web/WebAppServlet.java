@@ -128,39 +128,27 @@ import Acme.Serve.Serve;
  * 
  */
 public class WebAppServlet extends HttpServlet implements ServletContext {
+	private final static boolean _DEBUG = false;
 	public static final String DEF_DEBUG = "tjws.webapp.debug";
+	private final static boolean __DEBUG = "yes".equals(System.getProperty(DEF_DEBUG)) || _DEBUG;
 	
 	public static final String WAR_NAME_AS_CONTEXTPATH = "tjws.wardeploy.warname-as-context";
-	
 	public static final String WAR_DEPLOY_IN_ROOT = "tjws.wardeploy.as-root";
-	
 	public static final String RUNTIMEENV_ATTR = "##RuntimeEnv";
-	
 	static final String MULTIPART_ERR_MSQ = "Request isn't multipart/form-data type or processing it is not enabled in deplyment descriptor web.xml";
-	
 	protected static final String WEBAPPCLASSLOADER = "rogatkin.webapp.AppClassLoader";
-	
-	protected static final String WEBAPPINITTIMEOUT = "tjws.webapp.%s.init.timeout"; // in
-																						// seconds
+	// in seconds
+	protected static final String WEBAPPINITTIMEOUT = "tjws.webapp.%s.init.timeout";
 	
 	List<ServletAccessDescr> servlets;
-	
 	List<FilterAccessDescriptor> filters;
-	
 	URL[] cpUrls;
-	
 	ClassLoader ucl;
-	
 	private static AppContextDelegator appContextDelegator;
-	
 	private static Object runtimeEnv;
-	
 	File deployDir;
-	
 	Serve server;
-	
 	int sessionTimeout;
-	
 	int initTimeout;
 	
 	boolean noAnnot; // ignore @WebServlet @WebFilter and @WebListener
@@ -169,42 +157,24 @@ public class WebAppServlet extends HttpServlet implements ServletContext {
 	
 	// / context methods
 	protected String contextName;
-	
 	protected String contextPath;
-	
 	protected String virtualHost;
 	
-	// protected String origContextName, origContextPath;
-	
 	protected String description;
-	
 	protected Hashtable<String, Object> attributes;
-	
 	protected Hashtable<String, String> contextParameters;
-	
 	protected List<String> welcomeFiles;
-	
 	protected List<ErrorPageDescr> errorPages;
-	
 	protected List<EventListener> listeners;
-	
 	protected List<EventListener> sessionListeners;
-	
 	protected ArrayList<ServletRequestListener> requestListeners;
-	
 	protected ArrayList<ServletRequestAttributeListener> attributeListeners;
-	
 	protected Map<String, String> mimes;
-	
 	protected SessionCookieConfig scc;
-	
-	protected Set<SessionTrackingMode> dstm = EnumSet.of(SessionTrackingMode.URL, SessionTrackingMode.COOKIE),
-					stm;
-	
+	protected Set<SessionTrackingMode> dstm = EnumSet.of(SessionTrackingMode.URL, SessionTrackingMode.COOKIE), stm;
 	private boolean applyCompression;
 	
 	// ** interface to decouple from J2EE features
-	
 	public static interface AppContextDelegator {
 		/**
 		 * searches object in context
@@ -2555,12 +2525,6 @@ public class WebAppServlet extends HttpServlet implements ServletContext {
 				super.removeAttribute(name);
 			}
 			
-			// @Override
-			// public void setAttribute(String name, Object value) {
-			// System.err.printf("!!!Set attr %s=%s%n", name, value);
-			// super.setAttribute(name, value);
-			// }
-			
 			@Override
 			public RequestDispatcher getRequestDispatcher(String path) {
 				if (_DEBUG) {
@@ -3318,6 +3282,4 @@ public class WebAppServlet extends HttpServlet implements ServletContext {
 		}
 	}
 	
-	private final static boolean _DEBUG = false;
-	private final static boolean __DEBUG = "yes".equals(System.getProperty(DEF_DEBUG)) || _DEBUG;
 }

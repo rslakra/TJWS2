@@ -156,7 +156,19 @@
 	<!-- Compiles all .java classes under the build folder. -->
 	<target name="compile" depends="init" description="Compiling .java files">
 		<echo message="Compiling '${src.dir}' into '${build.dir}'" />
-		<javac fork="${javac.fork}" srcdir="${src.dir}" destdir="${classes.dir}" optimize="${javac.optimize}" debug="${javac.debug}" debuglevel="${javac.debug.level}" listfiles="${javac.listfiles}" includeantruntime="false" source="${javac.source}" target="${javac.target}" classpathref="build.classpath" />
+		<javac 
+			fork="${javac.fork}" 
+			srcdir="${src.dir}" 
+			destdir="${classes.dir}" 
+			excludes="rogatkin/app/**"
+			optimize="${javac.optimize}" 
+			debug="${javac.debug}" 
+			debuglevel="${javac.debug.level}" 
+			listfiles="${javac.listfiles}" 
+			includeantruntime="false" 
+			source="${javac.source}" 
+			target="${javac.target}" 
+			classpathref="build.classpath" />
 	</target>
 
 	<!-- Copies Logger.jar file into /../Libs Directory. -->
