@@ -1,31 +1,30 @@
-/* tjws - ObjectPool.java
- * Copyright (C) 2010 Dmitriy Rogatkin.  All rights reserved.
+/*
+ * tjws - ObjectPool.java
+ * Copyright (C) 2010 Dmitriy Rogatkin. All rights reserved.
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
  * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
+ * notice, this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in the
- *    documentation and/or other materials provided with the distribution.
- *  THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
- *  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- *  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- *  ARE DISCLAIMED. IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE FOR
- *  ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- *  DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
- *  SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
- *  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- *  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
- *  OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
- *  SUCH DAMAGE.
- *  
- *  Visit http://tjws.sourceforge.net to get the latest information
- *  about Rogatkin's products.                                                        
- *  $Id: ObjectPool.java,v 1.15 2012/06/23 06:59:29 dmitriy Exp $                
- *  Created on Mar 5, 2008
- *  @author Dmitriy
- *  
+ * notice, this list of conditions and the following disclaimer in the
+ * documentation and/or other materials provided with the distribution.
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
+ * Visit http://tjws.sourceforge.net to get the latest information
+ * about Rogatkin's products.
+ * $Id: ObjectPool.java,v 1.15 2012/06/23 06:59:29 dmitriy Exp $
+ * Created on Mar 5, 2008
+ * @author Dmitriy
  */
 package rogatkin.app;
 
@@ -35,6 +34,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 public abstract class ObjectPool<O> {
+	
 	protected String[] descardMethods = { "destroy", "close" };
 	protected BlockingQueue<O> pool;
 	protected ArrayList<O> borrowed;
@@ -50,19 +50,27 @@ public abstract class ObjectPool<O> {
 		}
 	}
 	
+	/**
+	 * 
+	 * @return
+	 */
 	protected abstract O create();
 	
-	protected void discard(O obj) {
+	/**
+	 * 
+	 * @param object
+	 */
+	protected void discard(O object) {
 		// System.err.printf("Discard %s%n", obj);
-		if (Wrapper != null && Wrapper.isAssignableFrom(obj.getClass()))
+		if (Wrapper != null && Wrapper.isAssignableFrom(object.getClass()))
 			try {
 				// obj = (O)((Wrapper)obj).unwrap(obj.getClass());
-				obj = (O) obj.getClass().getMethod("unwrap", Class.class).invoke(obj, obj.getClass());
+				object = (O) object.getClass().getMethod("unwrap", Class.class).invoke(object, object.getClass());
 			} catch (Exception e1) {
 			}
 		for (int i = 0; i < descardMethods.length; i++) {
 			try {
-				obj.getClass().getMethod(descardMethods[i], new Class[] {}).invoke(obj, new Object[] {});
+				object.getClass().getMethod(descardMethods[i], new Class[] {}).invoke(object, new Object[] {});
 				break;
 			} catch (IllegalArgumentException e) {
 			} catch (SecurityException e) {
@@ -73,12 +81,13 @@ public abstract class ObjectPool<O> {
 		}
 	}
 	
-	public ObjectPool(BlockingQueue<O> bq) {
-		if (bq != null) {
-			pool = bq;
-			borrowed = new ArrayList<O>(bq.size());
-		} else
+	public ObjectPool(BlockingQueue<O> blockingQueue) {
+		if (blockingQueue != null) {
+			pool = blockingQueue;
+			borrowed = new ArrayList<O>(blockingQueue.size());
+		} else {
 			throw new NullPointerException();
+		}
 	}
 	
 	public O get() {
@@ -101,12 +110,15 @@ public abstract class ObjectPool<O> {
 	}
 	
 	private O get1() {
-		if (pool.isEmpty() && borrowed.size() < getCapacity())
+		if (pool.isEmpty() && borrowed.size() < getCapacity()) {
 			return create();
-		// System.err.printf("get %s%n", o);
+			// System.err.printf("get %s%n", o);
+		}
+		
 		try {
-			if (timeout > 0)
+			if (timeout > 0) {
 				return pool.poll(timeout, TimeUnit.MILLISECONDS);
+			}
 			return pool.take();
 		} catch (InterruptedException e) {
 		}
@@ -116,16 +128,20 @@ public abstract class ObjectPool<O> {
 	public void put(O obj) {
 		assert borrowed.contains(obj);
 		synchronized (borrowed) {
-			if (borrowed.remove(obj) == false)
+			if (borrowed.remove(obj) == false) {
 				return; // connection already removed
+			}
 		}
-		// no synchronization between increasing limit and offering the
-		// connection for consumption is considered
-		// as acceptable, offering connection first and then decreasing limit
-		// can issue objects starvation,
-		// it will also require using set for borrowing list
-		// new Exception(String.format("returned %s, still in use: %d", obj,
-		// borrowed.size())).printStackTrace();
+		
+		/*
+		 * no synchronization between increasing limit and offering the
+		 * connection for consumption is considered
+		 * as acceptable, offering connection first and then decreasing limit
+		 * can issue objects starvation,
+		 * it will also require using set for borrowing list
+		 * new Exception(String.format("returned %s, still in use: %d", obj,
+		 * borrowed.size())).printStackTrace();
+		 */
 		if (pool.offer(obj) == false) {
 			// no room, discard the object
 			discard(obj);
@@ -133,15 +149,18 @@ public abstract class ObjectPool<O> {
 	}
 	
 	public void remove(O obj) {
-		if (borrowed.contains(obj))
+		if (borrowed.contains(obj)) {
 			synchronized (borrowed) {
-				if (borrowed.remove(obj) == false)
+				if (borrowed.remove(obj) == false) {
 					System.err.println("Object " + obj + " wasn't removed");
+				}
 			}
-		else {
-			if (pool.remove(obj) == false)
+		} else {
+			if (pool.remove(obj) == false) {
 				System.err.println("Object " + obj + " wasn't removed from pool");
+			}
 		}
+		
 		// TODO generally discard can have side effect
 		discard(obj);
 	}

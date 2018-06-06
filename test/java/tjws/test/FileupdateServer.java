@@ -30,10 +30,10 @@ public class FileupdateServer implements Runnable {
 			session.getBasicRemote().sendText("Registered " + p);
 			pollThr = new Thread(this);
 			pollThr.start();
-		} catch (IOException e) {
+		} catch(IOException e) {
 			try {
 				session.getBasicRemote().sendText("Can't setup watcher :" + e);
-			} catch (IOException e2) {
+			} catch(IOException e2) {
 				
 			}
 		}
@@ -41,12 +41,12 @@ public class FileupdateServer implements Runnable {
 	
 	@Override
 	public void run() {
-		for (;;) {
+		for(;;) {
 			try {
 				WatchKey watchKey = watchService.take(); // poll(10, );
-				if (!processWatchKey(watchKey))
+				if(!processWatchKey(watchKey))
 					break;
-			} catch (InterruptedException ie) {
+			} catch(InterruptedException ie) {
 				break;
 			}
 		}
@@ -54,17 +54,17 @@ public class FileupdateServer implements Runnable {
 	
 	@OnClose
 	public void stopWatch() {
-		if (pollThr != null)
+		if(pollThr != null)
 			pollThr.interrupt();
 	}
 	
 	private boolean processWatchKey(WatchKey watchKey) {
-		for (WatchEvent<?> event : watchKey.pollEvents()) {
-			if (StandardWatchEventKinds.OVERFLOW == event.kind())
+		for(WatchEvent<?> event : watchKey.pollEvents()) {
+			if(StandardWatchEventKinds.OVERFLOW == event.kind())
 				continue;
 			try {
 				session.getBasicRemote().sendObject(((Path) event.context()).toFile());
-			} catch (Exception e) {
+			} catch(Exception e) {
 				e.printStackTrace();
 			}
 		}

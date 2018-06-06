@@ -69,47 +69,46 @@ import Acme.Serve.Serve;
 public class SSLSelectorAcceptor extends SSLAcceptor {
 	private ServerSocketChannel channel;
 	private Selector selector;
-	private Iterator readyItor;
+	private Iterator<SelectionKey> readyItr;
 	private boolean clientAuth;
 	
 	// protected SSLEngine sslEngine;
 	private SSLContext context;
-	
 	protected ExecutorService exec;
 	
 	public Socket accept() throws IOException {
 		do {
-			if (readyItor == null) {
-				if (selector.select() > 0)
-					readyItor = selector.selectedKeys().iterator();
-				else
+			if (readyItr == null) {
+				if (selector.select() > 0) {
+					readyItr = selector.selectedKeys().iterator();
+				} else {
 					throw new IOException();
+				}
 			}
 			
-			if (readyItor.hasNext()) {
-				
+			if (readyItr.hasNext()) {
 				// Get key from set
-				SelectionKey key = (SelectionKey) readyItor.next();
-				
+				SelectionKey selectionKey = readyItr.next();
 				// Remove current entry
-				readyItor.remove();
+				readyItr.remove();
 				// TODO add processing CancelledKeyException
-				if (key.isValid() && key.isAcceptable()) {
+				if (selectionKey.isValid() && selectionKey.isAcceptable()) {
 					// Get channel
-					ServerSocketChannel keyChannel = (ServerSocketChannel) key.channel();
-					
+					ServerSocketChannel keyChannel = (ServerSocketChannel) selectionKey.channel();
 					// Get server socket
 					ServerSocket serverSocket = keyChannel.socket();
 					
 					// Accept request
 					SSLEngine sslEngine = context.createSSLEngine();
-					if (clientAuth)
+					if (clientAuth) {
 						sslEngine.setNeedClientAuth(clientAuth);
+					}
 					sslEngine.setUseClientMode(false);
 					return new SSLChannelSocket(serverSocket.accept(), sslEngine, exec);
 				}
-			} else
-				readyItor = null;
+			} else {
+				readyItr = null;
+			}
 		} while (true);
 	}
 	
@@ -125,77 +124,88 @@ public class SSLSelectorAcceptor extends SSLAcceptor {
 		} catch (IOException e) {
 			exceptions += e.toString();
 		}
-		if (exceptions.length() > 0)
+		if (exceptions.length() > 0) {
 			throw new IOException(exceptions);
-		if (exec != null)
+		}
+		if (exec != null) {
 			exec.shutdownNow();
+		}
 	}
 	
-	public void init(Map inProperties, Map outProperties) throws IOException {
+	/**
+	 * @see Acme.Serve.SSLAcceptor#init(java.util.Map, java.util.Map)
+	 */
+	public void init(Map<Object, Object> inProperties, Map<Object, Object> outProperties) throws IOException {
 		clientAuth = "true".equals(inProperties.get(ARG_CLIENTAUTH));
-		
 		context = initSSLContext(inProperties, outProperties);
-		
 		selector = Selector.open();
 		
 		channel = ServerSocketChannel.open();
 		channel.configureBlocking(false);
 		int port = Utils.parseInt(inProperties.get(ARG_PORT), Utils.parseInt(inProperties.get(Serve.ARG_PORT), PORT));
-		so_hs_timeout = Utils.parseInt(inProperties.get(ARG_SO_HS_TIMEOUT), SO_HS_TIMEOIUT);
+		socketHandshakeTimeout = Utils.parseInt(inProperties.get(ARG_SO_HS_TIMEOUT), SO_HS_TIMEOIUT);
 		InetSocketAddress isa = null;
-		if (inProperties.get(Serve.ARG_BINDADDRESS) != null)
+		if (inProperties.get(Serve.ARG_BINDADDRESS) != null) {
 			try {
 				isa = new InetSocketAddress((String) inProperties.get(Serve.ARG_BINDADDRESS), port);
-			} catch (Exception e) {
+			} catch (Exception ex) {
 			}
-		if (isa == null)
+		}
+		
+		if (isa == null) {
 			isa = new InetSocketAddress(port);
+		}
+		
 		// TODO add ARG_BACKLOG
 		channel.socket().bind(isa);
 		
 		// Register interest in when connection
 		channel.register(selector, SelectionKey.OP_ACCEPT);
 		if (outProperties != null) {
-			if (channel.socket().isBound())
+			if (channel.socket().isBound()) {
 				outProperties.put(Serve.ARG_BINDADDRESS, channel.socket().getInetAddress().getHostName());
-			else
+			} else {
 				outProperties.put(Serve.ARG_BINDADDRESS, InetAddress.getLocalHost().getHostName());
+			}
 		}
 		exec = Executors.newSingleThreadScheduledExecutor();
 	}
 	
+	/**
+	 * @see Acme.Serve.SSLAcceptor#toString()
+	 */
 	public String toString() {
-		return "SSLSelectorAcceptor - " + (channel == null ? "unset" : "" + channel.socket());
+		return "SSLSelectorAcceptor - " + (channel != null ? channel.socket() : "Unset!");
 	}
 	
 	protected static class SSLChannelSocket extends Socket {
 		Socket socket;
-		SSLSocketChannel channel;
-		ByteBuffer readBuff, writeBuff;
-		InputStream inp;
-		OutputStream outp;
+		SSLSocketChannel sslSocketChannel;
+		ByteBuffer readBuffer, writeBuffer;
+		InputStream inputStream;
+		OutputStream outputStream;
 		
-		protected SSLChannelSocket(Socket socket, SSLEngine sslEngine, ExecutorService exec) throws IOException {
+		protected SSLChannelSocket(final Socket socket, SSLEngine sslEngine, ExecutorService exec) throws IOException {
 			this.socket = socket;
-			setSoTimeout(so_hs_timeout);
-			channel = new SSLSocketChannel(socket.getChannel(), sslEngine, exec, null);
-			readBuff = ByteBuffer.allocate(1024 * 16);
-			readBuff.flip();
-			writeBuff = ByteBuffer.allocate(1024);
+			setSoTimeout(socketHandshakeTimeout);
+			sslSocketChannel = new SSLSocketChannel(socket.getChannel(), sslEngine, exec, null);
+			readBuffer = ByteBuffer.allocate(1024 * 16);
+			readBuffer.flip();
+			writeBuffer = ByteBuffer.allocate(1024);
 		}
 		
 		public ByteChannel getByteChannel() {
-			return channel;
+			return sslSocketChannel;
 		}
 		
 		public SSLSession getSession() {
 			// channel.sslEngine.getSSLParameters();
-			return channel.sslEngine.getSession();
+			return sslSocketChannel.sslEngine.getSession();
 		}
 		
 		@Override
 		public SocketChannel getChannel() {
-			return channel.unwrapChannel();
+			return sslSocketChannel.unwrapChannel();
 		}
 		
 		@Override
@@ -215,9 +225,11 @@ public class SSLSelectorAcceptor extends SSLAcceptor {
 		
 		@Override
 		public InputStream getInputStream() throws IOException {
-			if (inp == null)
-				inp = Channels.newInputStream(channel);
-			return inp;
+			if (inputStream == null) {
+				inputStream = Channels.newInputStream(sslSocketChannel);
+			}
+			
+			return inputStream;
 		}
 		
 		int printFilter(int c) {
@@ -237,9 +249,11 @@ public class SSLSelectorAcceptor extends SSLAcceptor {
 		
 		@Override
 		public OutputStream getOutputStream() throws IOException {
-			if (outp == null)
-				outp = Channels.newOutputStream(channel);
-			return outp;
+			if (outputStream == null) {
+				outputStream = Channels.newOutputStream(sslSocketChannel);
+			}
+			
+			return outputStream;
 		}
 	}
 	
@@ -248,10 +262,9 @@ public class SSLSelectorAcceptor extends SSLAcceptor {
 		 * This object is used to feed the {@link SSLEngine}'s wrap and unwrap
 		 * methods during the handshake phase.
 		 **/
-		protected static ByteBuffer emptybuffer = ByteBuffer.allocate(0);
+		protected static ByteBuffer emptyBuffer = ByteBuffer.allocate(0);
 		
-		protected ExecutorService exec;
-		
+		protected ExecutorService executor;
 		protected List<Future<?>> tasks;
 		
 		/** raw payload incoming */
@@ -281,19 +294,17 @@ public class SSLSelectorAcceptor extends SSLAcceptor {
 		 **/
 		protected int bufferallocations = 0;
 		
-		protected SSLSocketChannel(SocketChannel channel, SSLEngine sslEngine, ExecutorService exec, SelectionKey key) throws IOException {
-			if (channel == null || sslEngine == null || exec == null)
+		protected SSLSocketChannel(SocketChannel channel, SSLEngine sslEngine, ExecutorService executor, SelectionKey key) throws IOException {
+			if (channel == null || sslEngine == null || executor == null) {
 				throw new IllegalArgumentException("parameter must not be null");
+			}
 			
 			this.socketChannel = channel;
 			this.sslEngine = sslEngine;
-			this.exec = exec;
+			this.executor = executor;
 			
-			readEngineResult = writeEngineResult = new SSLEngineResult(Status.BUFFER_UNDERFLOW, sslEngine.getHandshakeStatus(), 0, 0); // init
-																																		// to
-																																		// prevent
-																																		// NPEs
-			
+			// init to prevent NPEs
+			readEngineResult = writeEngineResult = new SSLEngineResult(Status.BUFFER_UNDERFLOW, sslEngine.getHandshakeStatus(), 0, 0);
 			tasks = new ArrayList<Future<?>>(3);
 			if (key != null) {
 				key.interestOps(key.interestOps() | SelectionKey.OP_WRITE);
@@ -301,7 +312,7 @@ public class SSLSelectorAcceptor extends SSLAcceptor {
 			}
 			createBuffers(sslEngine.getSession());
 			// kick off handshake
-			socketChannel.write(wrap(emptybuffer));// initializes res
+			socketChannel.write(wrap(emptyBuffer));// initializes res
 			// TODO put it in thread
 			// processHandshake();
 		}
@@ -313,14 +324,16 @@ public class SSLSelectorAcceptor extends SSLAcceptor {
 					try {
 						f.get();
 						break;
-					} catch (InterruptedException e) {
+					} catch (InterruptedException ex) {
 						interrupted = true;
 					}
 				}
-				if (interrupted)
+				
+				if (interrupted) {
 					Thread.currentThread().interrupt();
-			} catch (ExecutionException e) {
-				throw new RuntimeException(e);
+				}
+			} catch (ExecutionException ex) {
+				throw new RuntimeException(ex);
 			}
 		}
 		
@@ -330,11 +343,15 @@ public class SSLSelectorAcceptor extends SSLAcceptor {
 		 * {@link #read(ByteBuffer)} and {@link #write(ByteBuffer)}
 		 **/
 		private void processHandshake() throws IOException {
-			if (sslEngine.getHandshakeStatus() == HandshakeStatus.NOT_HANDSHAKING)
-				return; // since this may be called either from a reading or a
-						// writing thread and because this method is
-						// synchronized it is necessary to double check if we
-						// are still handshaking.
+			if (sslEngine.getHandshakeStatus() == HandshakeStatus.NOT_HANDSHAKING) {
+				/*
+				 * since this may be called either from a reading or a writing
+				 * thread and because this method is synchronized it is
+				 * necessary to double check if we are still handshaking.
+				 */
+				return;
+			}
+			
 			if (!tasks.isEmpty()) {
 				Iterator<Future<?>> it = tasks.iterator();
 				while (it.hasNext()) {
@@ -342,8 +359,9 @@ public class SSLSelectorAcceptor extends SSLAcceptor {
 					if (f.isDone()) {
 						it.remove();
 					} else {
-						if (isBlocking())
+						if (isBlocking()) {
 							consumeFutureUninterruptible(f);
+						}
 						return;
 					}
 				}
@@ -367,38 +385,26 @@ public class SSLSelectorAcceptor extends SSLAcceptor {
 			}
 			consumeDelegatedTasks();
 			if (tasks.isEmpty() || sslEngine.getHandshakeStatus() == SSLEngineResult.HandshakeStatus.NEED_WRAP) {
-				socketChannel.write(wrap(emptybuffer));
+				socketChannel.write(wrap(emptyBuffer));
 				if (writeEngineResult.getHandshakeStatus() == HandshakeStatus.FINISHED) {
 					createBuffers(sslEngine.getSession());
 					return;
 				}
 			}
-			assert (sslEngine.getHandshakeStatus() != HandshakeStatus.NOT_HANDSHAKING);// this
-																						// function
-																						// could
-																						// only
-																						// leave
-																						// NOT_HANDSHAKING
-																						// after
-																						// createBuffers
-																						// was
-																						// called
-																						// unless
-																						// #190
-																						// occurs
-																						// which
-																						// means
-																						// that
-																						// nio
-																						// wrap/unwrap
-																						// never
-																						// return
-																						// HandshakeStatus.FINISHED
 			
-			bufferallocations = 1; // look at variable declaration why this line
-									// exists and #190. Without this line
-									// buffers would not be be recreated when
-									// #190 AND a rehandshake occur.
+			/*
+			 * this function could only leave NOT_HANDSHAKING after
+			 * createBuffers was called unless #190 occurs which means that nio
+			 * wrap/unwrap never return HandshakeStatus.FINISHED
+			 */
+			assert (sslEngine.getHandshakeStatus() != HandshakeStatus.NOT_HANDSHAKING);
+			
+			/*
+			 * look at variable declaration why this line exists and #190.
+			 * Without this line buffers would not be be recreated when #190 AND
+			 * a rehandshake occur.
+			 */
+			bufferallocations = 1;
 		}
 		
 		private synchronized ByteBuffer wrap(ByteBuffer b) throws SSLException {
@@ -422,6 +428,7 @@ public class SSLSelectorAcceptor extends SSLAcceptor {
 				rem = inData.remaining();
 				readEngineResult = sslEngine.unwrap(inCrypt, inData);
 			} while (readEngineResult.getStatus() == SSLEngineResult.Status.OK && (rem != inData.remaining() || sslEngine.getHandshakeStatus() == HandshakeStatus.NEED_UNWRAP));
+			
 			inData.flip();
 			return inData;
 		}
@@ -429,7 +436,7 @@ public class SSLSelectorAcceptor extends SSLAcceptor {
 		protected void consumeDelegatedTasks() {
 			Runnable task;
 			while ((task = sslEngine.getDelegatedTask()) != null) {
-				tasks.add(exec.submit(task));
+				tasks.add(executor.submit(task));
 				// task.run();
 			}
 		}
@@ -443,13 +450,19 @@ public class SSLSelectorAcceptor extends SSLAcceptor {
 				outCrypt = ByteBuffer.allocate(netBufferMax);
 				inCrypt = ByteBuffer.allocate(netBufferMax);
 			} else {
-				if (inData.capacity() != appBufferMax)
+				if (inData.capacity() != appBufferMax) {
 					inData = ByteBuffer.allocate(appBufferMax);
-				if (outCrypt.capacity() != netBufferMax)
+				}
+				
+				if (outCrypt.capacity() != netBufferMax) {
 					outCrypt = ByteBuffer.allocate(netBufferMax);
-				if (inCrypt.capacity() != netBufferMax)
+				}
+				
+				if (inCrypt.capacity() != netBufferMax) {
 					inCrypt = ByteBuffer.allocate(netBufferMax);
+				}
 			}
+			
 			inData.rewind();
 			inData.flip();
 			inCrypt.rewind();
@@ -511,23 +524,28 @@ public class SSLSelectorAcceptor extends SSLAcceptor {
 			assert (inData.position() == 0);
 			inData.clear();
 			
-			if (!inCrypt.hasRemaining())
+			if (!inCrypt.hasRemaining()) {
 				inCrypt.clear();
-			else
+			} else {
 				inCrypt.compact();
+			}
 			
-			if (isBlocking() || readEngineResult.getStatus() == Status.BUFFER_UNDERFLOW)
+			if (isBlocking() || readEngineResult.getStatus() == Status.BUFFER_UNDERFLOW) {
 				if (socketChannel.read(inCrypt) == -1) {
 					return -1;
 				}
+			}
+			
 			inCrypt.flip();
 			unwrap();
 			
 			int transfered = transfereTo(inData, dst);
 			if (transfered == 0 && isBlocking()) {
-				return read(dst); // "transfered" may be 0 when not enough bytes
-									// were received or during rehandshaking
+				// "transfered" may be 0 when not enough bytes were received or
+				// during rehandshaking
+				return read(dst);
 			}
+			
 			return transfered;
 		}
 		
@@ -539,15 +557,19 @@ public class SSLSelectorAcceptor extends SSLAcceptor {
 			if (inData.hasRemaining()) {
 				return transfereTo(inData, dst);
 			}
-			if (!inData.hasRemaining())
+			
+			if (!inData.hasRemaining()) {
 				inData.clear();
+			}
 			// test if some bytes left from last read (e.g. BUFFER_UNDERFLOW)
 			if (inCrypt.hasRemaining()) {
 				unwrap();
 				int amount = transfereTo(inData, dst);
-				if (amount > 0)
+				if (amount > 0) {
 					return amount;
+				}
 			}
+			
 			return 0;
 		}
 		
@@ -559,10 +581,10 @@ public class SSLSelectorAcceptor extends SSLAcceptor {
 			try {
 				sslEngine.closeOutbound();
 				sslEngine.getSession().invalidate();
-				if (socketChannel.isOpen())
-					socketChannel.write(wrap(emptybuffer));// FIXME what if not
-															// all bytes can be
-															// written
+				if (socketChannel.isOpen()) {
+					// FIXME what if not all bytes can be written
+					socketChannel.write(wrap(emptyBuffer));
+				}
 			} finally {
 				socketChannel.close();
 			}
@@ -602,20 +624,9 @@ public class SSLSelectorAcceptor extends SSLAcceptor {
 		}
 		
 		public boolean isNeedWrite() {
-			return outCrypt.hasRemaining() || !isHandShakeComplete(); // FIXME
-																		// this
-																		// condition
-																		// can
-																		// cause
-																		// high
-																		// cpu
-																		// load
-																		// during
-																		// handshaking
-																		// when
-																		// network
-																		// is
-																		// slow
+			// FIXME this condition can cause high cpu load during handshaking
+			// when network is slow
+			return outCrypt.hasRemaining() || !isHandShakeComplete();
 		}
 		
 		public void writeMore() throws IOException {

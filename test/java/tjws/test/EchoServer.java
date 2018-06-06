@@ -37,7 +37,7 @@ public class EchoServer {
 		try {
 			session.getBasicRemote().sendText((session.isSecure() ? "Secure c" : "C") + "onnection Established at " + new Date() + " htp session " + htp_sess);
 			session.setMaxIdleTimeout(60 * 1000);
-		} catch (IOException ex) {
+		} catch(IOException ex) {
 			ex.printStackTrace();
 		}
 	}
@@ -53,18 +53,17 @@ public class EchoServer {
 		/*
 		 * try {
 		 * session.getBasicRemote().sendText(message);
-		 * 
 		 * } catch (IOException ex) {
 		 * ex.printStackTrace();
 		 * }
 		 */
 		String fromShare = "";
-		for (Session s : session.getOpenSessions()) {
-			if (s != session && s.isOpen() && s.getUserProperties().get("SHARE") != null)
+		for(Session s : session.getOpenSessions()) {
+			if(s != session && s.isOpen() && s.getUserProperties().get("SHARE") != null)
 				fromShare += " " + (String) s.getUserProperties().get("SHARE");
 		}
 		session.getUserProperties().put("SHARE", message);
-		if (fromShare.length() > 0)
+		if(fromShare.length() > 0)
 			message += " from others " + fromShare;
 		return message;
 	}

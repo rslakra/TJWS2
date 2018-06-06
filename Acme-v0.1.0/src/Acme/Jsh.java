@@ -47,9 +47,9 @@ public class Jsh {
 		Runtime runtime = Runtime.getRuntime();
 		try {
 			BufferedReader br = new BufferedReader(new InputStreamReader(in));
-			while(true) {
+			while (true) {
 				String line = br.readLine();
-				if(line == null)
+				if (line == null)
 					break;
 				Process p = runtime.exec(line);
 				OutputStream pin = p.getOutputStream();
@@ -57,7 +57,7 @@ public class Jsh {
 				InputStream perr = p.getErrorStream();
 				// !!!
 			}
-		} catch(IOException ignore) {
+		} catch (IOException ignore) {
 		}
 	}
 	

@@ -1,20 +1,20 @@
 // Utils - assorted static utility routines
 //
-// Copyright (C)1996,1998 by Jef Poskanzer <jef@acme.com>.  All rights reserved.
+// Copyright (C)1996,1998 by Jef Poskanzer <jef@acme.com>. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions
 // are met:
 // 1. Redistributions of source code must retain the above copyright
-//    notice, this list of conditions and the following disclaimer.
+// notice, this list of conditions and the following disclaimer.
 // 2. Redistributions in binary form must reproduce the above copyright
-//    notice, this list of conditions and the following disclaimer in the
-//    documentation and/or other materials provided with the distribution.
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
 //
 // THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
 // ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
 // FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
 // DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
 // OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
@@ -27,7 +27,8 @@
 // fine Java utilities: http://www.acme.com/java/
 //
 // Base64 code borrowed from public domain supported by Robert Harder
-// Please visit <a href="http://iharder.net/base64">http://iharder.net/base64</a>
+// Please visit <a
+// href="http://iharder.net/base64">http://iharder.net/base64</a>
 // periodically to check for updates or to contribute improvements.
 //
 // All enhancements Copyright (C)1998-2010 by Dmitriy Rogatkin
@@ -40,14 +41,16 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.PrintStream;
 import java.io.Reader;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.security.Provider;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -58,10 +61,16 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.StringTokenizer;
 
+import javax.net.ssl.SSLParameters;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import com.rslakra.logger.LogManager;
+
 /// Assorted static utility routines.
 // <P>
 // Whenever I come up with a static routine that might be of general use,
-// I put it here.  So far the class includes:
+// I put it here. So far the class includes:
 // <UL>
 // <LI> some string routines that were left out of java.lang.String
 // <LI> a general array-to-string routine
@@ -77,21 +86,22 @@ import java.util.StringTokenizer;
 // <A HREF="/resources/classes/Acme.tar.Z">Fetch the entire Acme package.</A>
 
 public class Utils {
-	// / Returns a date string formatted in Unix ls style - if it's within
-	// six months of now, Mmm dd hh:ss, else Mmm dd yyyy.
-	static final SimpleDateFormat shortfmt = new SimpleDateFormat("MMM dd HH:mm");
-	
-	static final SimpleDateFormat longfmt = new SimpleDateFormat("MMM dd yyyy");
+	/*
+	 * Returns a date string formatted in Unix ls style - if it's within six
+	 * months of now, Mmm dd hh:ss, else Mmm dd yyyy.
+	 */
+	static final SimpleDateFormat SHORT_DATE_FORMAT = new SimpleDateFormat("MMM dd HH:mm");
+	static final SimpleDateFormat LONG_DATE_FORMAT = new SimpleDateFormat("MMM dd yyyy");
 	
 	public static final int COPY_BUF_SIZE = 4096 * 2;
 	
-	public final static String ISO_8859_1 = "ISO-8859-1";
-	
-	public static final Class[] EMPTY_CLASSES = {};
-	
+	public static final Class<?>[] EMPTY_CLASSES = {};
 	public static final Object[] EMPTY_OBJECTS = {};
 	
-	public static final Enumeration EMPTY_ENUMERATION = new Enumeration() {
+	/**
+	 * EMPTY_ENUMERATION
+	 */
+	public static final Enumeration<Object> EMPTY_ENUMERATION = new Enumeration<Object>() {
 		public boolean hasMoreElements() {
 			return false;
 		}
@@ -101,30 +111,46 @@ public class Utils {
 		}
 	};
 	
+	/**
+	 * 
+	 * @param date
+	 * @return
+	 */
 	public static String lsDateStr(Date date) {
-		if (Math.abs(System.currentTimeMillis() - date.getTime()) < 183L * 24L * 60L * 60L * 1000L)
-			return shortfmt.format(date);
-		else
-			return longfmt.format(date);
+		if (Math.abs(System.currentTimeMillis() - date.getTime()) < 183L * 24L * 60L * 60L * 1000L) {
+			return SHORT_DATE_FORMAT.format(date);
+		} else {
+			return LONG_DATE_FORMAT.format(date);
+		}
 	}
 	
-	public static Hashtable parseQueryString(String query, String encoding) {
-		Hashtable result = new Hashtable();
-		if (encoding == null)
-			encoding = "UTF-8";
-		StringTokenizer st = new StringTokenizer(query, "&");
-		while (st.hasMoreTokens()) {
-			String pair = st.nextToken();
+	/**
+	 * 
+	 * @param query
+	 * @param encoding
+	 * @return
+	 */
+	public static Hashtable<String, String[]> parseQueryString(final String query, String encoding) {
+		Hashtable<String, String[]> parsedQueryString = new Hashtable<String, String[]>();
+		if (IOHelper.isNullOrEmpty(encoding)) {
+			encoding = IOHelper.UTF_8;
+		}
+		
+		final StringTokenizer stringTokens = new StringTokenizer(query, "&");
+		while (stringTokens.hasMoreTokens()) {
+			String pair = stringTokens.nextToken();
 			int ep = pair.indexOf('=');
 			String key = ep > 0 ? pair.substring(0, ep) : pair;
 			String value = ep > 0 ? pair.substring(ep + 1) : "";
 			try {
-				key = /* URLDecoder. */decode(key, encoding);
-				if (value != null)
-					value = /* URLDecoder. */decode(value, encoding);
-			} catch (UnsupportedEncodingException uee) {
+				key = decode(key, encoding);
+				if (value != null) {
+					value = decode(value, encoding);
+				}
+			} catch (UnsupportedEncodingException ex) {
 			}
-			String[] values = (String[]) result.get(key);
+			
+			String[] values = parsedQueryString.get(key);
 			String[] newValues;
 			if (values == null) {
 				newValues = new String[1];
@@ -134,28 +160,44 @@ public class Utils {
 				System.arraycopy(values, 0, newValues, 0, values.length);
 				newValues[values.length] = value;
 			}
-			result.put(key, newValues);
+			
+			parsedQueryString.put(key, newValues);
 		}
-		return result;
+		
+		return parsedQueryString;
 	}
 	
-	public static Map parsePostData(long len, InputStream is, String encoding, String[] cachedStream) throws IOException {
+	/**
+	 * 
+	 * @param length
+	 * @param inputStream
+	 * @param encoding
+	 * @param cachedStream
+	 * @return
+	 * @throws IOException
+	 */
+	public static Map<?, ?> parsePostData(long length, InputStream inputStream, String encoding, String[] cachedStream) throws IOException {
 		// TODO: handle parsing data over 2 GB
-		if (len > Integer.MAX_VALUE)
-			throw new RuntimeException("Can't process POST data over " + Integer.MAX_VALUE + ", requested: " + len);
-		byte[] buf = new byte[(int) len];
-		int fp = 0;
-		while (fp < len) {
-			int c = is.read(buf, fp, buf.length - fp);
-			if (c < 0)
-				break;
-			fp += c;
+		if (length > Integer.MAX_VALUE) {
+			throw new RuntimeException("Can't process POST data over " + Integer.MAX_VALUE + ", requested: " + length);
 		}
+		
+		byte[] buffer = new byte[(int) length];
+		int filePointer = 0;
+		while (filePointer < length) {
+			int readBytes = inputStream.read(buffer, filePointer, buffer.length - filePointer);
+			if (readBytes < 0) {
+				break;
+			}
+			filePointer += readBytes;
+		}
+		
 		// System.err.println("====>"+new String( buf));
-		if (cachedStream != null && cachedStream.length > 0)
-			return parseQueryString(cachedStream[0] = new String(buf, 0, fp, ISO_8859_1), encoding);
-		else
-			return parseQueryString(new String(buf, 0, fp, ISO_8859_1), encoding);
+		if (cachedStream != null && cachedStream.length > 0) {
+			return parseQueryString(cachedStream[0] = new String(buffer, 0, filePointer, IOHelper.ISO_8859_1), encoding);
+		} else {
+			return parseQueryString(new String(buffer, 0, filePointer, IOHelper.ISO_8859_1), encoding);
+		}
 	}
 	
 	/**
@@ -173,11 +215,14 @@ public class Utils {
 		if (enc == null || enc.length() == 0) {
 			throw new UnsupportedEncodingException("decode: no source char encoding provided.");
 		}
-		if (s == null)
+		
+		if (s == null) {
 			return null;
+		}
+		
 		boolean decoded = false;
 		int l = s.length();
-		StringBuffer sb = new StringBuffer(l > 1024 ? l / 3 : l);
+		StringBuffer sBuffer = new StringBuffer(l > 1024 ? l / 3 : l);
 		
 		int state = sText;
 		int i = 0;
@@ -192,14 +237,15 @@ public class Utils {
 			switch (c) {
 				case '+':
 					decoded = true;
-					if (state == sText)
-						sb.append(' ');
-					else if (state == s2Dig) {
-						sb.append(new String(buf, 0, pos + 1, enc));
+					if (state == sText) {
+						sBuffer.append(' ');
+					} else if (state == s2Dig) {
+						sBuffer.append(new String(buf, 0, pos + 1, enc));
 						state = sText;
-						sb.append(' ');
-					} else
+						sBuffer.append(' ');
+					} else {
 						new IllegalArgumentException("decode: unexpected + at pos: " + i + ", of : " + s);
+					}
 					break;
 				case '0':
 				case '1':
@@ -236,44 +282,49 @@ public class Utils {
 					decoded = true;
 					if (state == sText) {
 						state = sEscape;
-						if (buf == null)
+						if (buf == null) {
 							buf = new byte[(l - i) / 3];
+						}
 						pos = 0;
 					} else if (state == s2Dig) {
 						state = sEscape;
 						pos++;
-					} else
+					} else {
 						new IllegalArgumentException("decode: unexpected escape % at pos: " + i + ", of : " + s);
+					}
 					break;
 				case 'u':
 					if (state == sEscape) {
 						if (pos > 0) {
-							sb.append(new String(buf, 0, pos, enc));
+							sBuffer.append(new String(buf, 0, pos, enc));
 							pos = 0;
 						}
 						state = sU1;
 					} else if (state == sText) {
-						sb.append(c);
+						sBuffer.append(c);
 					} else if (state == s2Dig) {
-						sb.append(new String(buf, 0, pos + 1, enc));
+						sBuffer.append(new String(buf, 0, pos + 1, enc));
 						state = sText;
-						sb.append(c);
-					} else
+						sBuffer.append(c);
+					} else {
 						new IllegalArgumentException("decode: unexpected char in hex at pos: " + i + ", of : " + s);
+					}
 					break;
 				default:
-					if (state == sText)
-						sb.append(c);
-					else if (state == s2Dig) {
-						sb.append(new String(buf, 0, pos + 1, enc));
+					if (state == sText) {
+						sBuffer.append(c);
+					} else if (state == s2Dig) {
+						sBuffer.append(new String(buf, 0, pos + 1, enc));
 						state = sText;
-						sb.append(c);
-					} else
+						sBuffer.append(c);
+					} else {
 						new IllegalArgumentException("decode: unexpected char in hex at pos: " + i + ", of : " + s);
+					}
 					
 					break;
 			}
 			i++;
+			
 			if (processDig) {
 				if (state == sEscape) {
 					code = c - ofs;
@@ -282,9 +333,9 @@ public class Utils {
 					buf[pos] = (byte) (code * 16 + (c - ofs));
 					state = s2Dig;
 				} else if (state == s2Dig) { // escape finished
-					sb.append(new String(buf, 0, pos + 1, enc));
+					sBuffer.append(new String(buf, 0, pos + 1, enc));
 					state = sText;
-					sb.append(c);
+					sBuffer.append(c);
 				} else if (state == sU1) {
 					code = c - ofs;
 					state = sU2;
@@ -295,37 +346,42 @@ public class Utils {
 					code = code * 16 + c - ofs;
 					state = sU4;
 				} else if (state == sU4) {
-					sb.append((char) (code * 16 + c - ofs));
+					sBuffer.append((char) (code * 16 + c - ofs));
 					state = sText;
-				} else
-					sb.append(c);
+				} else {
+					sBuffer.append(c);
+				}
 				processDig = false;
 			}
 		}
-		if (state == s2Dig)
-			sb.append(new String(buf, 0, pos + 1, enc));
-		return (decoded ? sb.toString() : s);
+		
+		if (state == s2Dig) {
+			sBuffer.append(new String(buf, 0, pos + 1, enc));
+		}
+		
+		return (decoded ? sBuffer.toString() : s);
 	}
 	
 	private static final int sText = 0;
-	
 	private static final int s1Dig = 1;
-	
 	private static final int s2Dig = 2;
-	
 	private static final int sEscape = 3;
-	
 	private static final int sU1 = 4;
-	
 	private static final int sU2 = 5;
-	
 	private static final int sU3 = 6;
-	
 	private static final int sU4 = 7;
 	
+	/**
+	 * 
+	 * @param s
+	 * @param encodeWS
+	 * @return
+	 */
 	public static String htmlEncode(String s, boolean encodeWS) {
-		if (s == null)
+		if (s == null) {
 			return null;
+		}
+		
 		char[] ca = s.toCharArray();
 		StringBuffer res = new StringBuffer(ca.length);
 		int ls = 0;
@@ -382,11 +438,19 @@ public class Utils {
 					blankMet = false;
 			}
 		}
-		if (ls < ca.length)
+		
+		if (ls < ca.length) {
 			res.append(ca, ls, ca.length - ls);
+		}
+		
 		return res.toString();
 	}
 	
+	/**
+	 * 
+	 * @param contentEncoding
+	 * @return
+	 */
 	public static float isGzipAccepted(String contentEncoding) {
 		float result = 0f;
 		if (contentEncoding != null) {
@@ -418,54 +482,70 @@ public class Utils {
 			for (int s = 0;; ++p, ++s) {
 				boolean sEnd = (s >= string.length());
 				boolean pEnd = (p >= pattern.length() || pattern.charAt(p) == '|');
-				if (sEnd && pEnd)
+				if (sEnd && pEnd) {
 					return true;
-				if (sEnd || pEnd)
+				}
+				if (sEnd || pEnd) {
 					break;
-				if (pattern.charAt(p) == '?')
+				}
+				if (pattern.charAt(p) == '?') {
 					continue;
+				}
 				if (pattern.charAt(p) == '*') {
 					int i;
 					++p;
-					for (i = string.length(); i >= s; --i)
-						if (match(pattern.substring(p), string.substring(i))) // not
-																				// quite
-																				// right
+					for (i = string.length(); i >= s; --i) {
+						if (match(pattern.substring(p), string.substring(i))) {
+							// not quite right
 							return true;
+						}
+					}
 					break;
 				}
-				if (pattern.charAt(p) != string.charAt(s))
+				
+				if (pattern.charAt(p) != string.charAt(s)) {
 					break;
+				}
 			}
+			
 			p = pattern.indexOf('|', p);
-			if (p == -1)
+			if (p == -1) {
 				return false;
+			}
 		}
 	}
 	
-	// / Finds the maximum length of a string that matches a given wildcard
-	// pattern. Only does ? and *, and multiple patterns separated by |.
+	/*
+	 * Finds the maximum length of a string that matches a given wildcard
+	 * pattern. Only does ? and *, and multiple patterns separated by |.
+	 */
 	public static int matchSpan(String pattern, String string) {
 		int result = 0;
-		StringTokenizer st = new StringTokenizer(pattern, "|");
-		
-		while (st.hasMoreTokens()) {
-			int len = matchSpan1(st.nextToken(), string);
-			if (len > result)
-				result = len;
+		final StringTokenizer stringTokenizer = new StringTokenizer(pattern, "|");
+		while (stringTokenizer.hasMoreTokens()) {
+			final int length = matchSpan1(stringTokenizer.nextToken(), string);
+			if (length > result) {
+				result = length;
+			}
 		}
+		
 		return result;
 	}
 	
 	static int matchSpan1(String pattern, String string) {
 		int p = 0;
 		for (; p < string.length() && p < pattern.length(); p++) {
-			if (pattern.charAt(p) == string.charAt(p))
+			if (pattern.charAt(p) == string.charAt(p)) {
 				continue;
-			if (pattern.charAt(p) == '*')
+			}
+			
+			if (pattern.charAt(p) == '*') {
 				return p - 1;
+			}
+			
 			return 0;
 		}
+		
 		return p < (pattern.length() - 1) ? -1 : p;
 	}
 	
@@ -475,8 +555,10 @@ public class Utils {
 		StringTokenizer st = new StringTokenizer(str);
 		int n = st.countTokens();
 		String[] strs = new String[n];
-		for (int i = 0; i < n; ++i)
+		for (int i = 0; i < n; ++i) {
 			strs[i] = st.nextToken();
+		}
+		
 		return strs;
 	}
 	
@@ -488,8 +570,9 @@ public class Utils {
 		int index = -1;
 		while (true) {
 			index = str.indexOf(delim, index + 1);
-			if (index == -1)
+			if (index == -1) {
 				break;
+			}
 			++n;
 		}
 		String[] strs = new String[n];
@@ -540,6 +623,7 @@ public class Utils {
 				}
 			}
 		}
+		
 		if (argStart > 0) {
 			result = copyOf(result, result.length + 1);
 			result[result.length - 1] = new String(ca, argStart, ca.length - argStart);
@@ -570,60 +654,78 @@ public class Utils {
 	 * }
 	 */
 	public static String canonicalizePath(String path) {
-		if (path == null || path.length() == 0)
+		if (IOHelper.isNullOrEmpty(path)) {
 			return path;
-		List pathElems = new ArrayList(6);
-		char[] pa = path.toCharArray();
-		int n = pa.length;
-		int s = -1;
+		}
+		
+		List<String> pathElements = new ArrayList<String>(6);
+		char[] pathChars = path.toCharArray();
+		int n = pathChars.length;
+		int startIndex = -1;
 		int lev = 0;
 		for (int i = 0; i < n; i++) {
-			if (s < 0) {
-				if (pa[i] != '/' && pa[i] != '\\')
-					s = i;
+			if (startIndex < 0) {
+				if (pathChars[i] != '/' && pathChars[i] != '\\') {
+					startIndex = i;
+				}
 			} else {
-				boolean f = false;
-				if (pa[i] == '?')
-					f = true;
-				if (pa[i] == '/' || pa[i] == '\\' || f) {
-					String el = new String(pa, s, i - s);
-					if (el.equals("..")) {
-						if (pathElems.size() > 0)
-							pathElems.remove(pathElems.size() - 1);
-						else
+				boolean found = false;
+				if (pathChars[i] == '?') {
+					found = true;
+				}
+				
+				if (pathChars[i] == '/' || pathChars[i] == '\\' || found) {
+					String element = new String(pathChars, startIndex, i - startIndex);
+					if (element.equals("..")) {
+						if (pathElements.size() > 0) {
+							pathElements.remove(pathElements.size() - 1);
+						} else {
 							lev--;
+						}
 						// else exception ?
-					} else if (el.equals(".") == false)
-						if (lev >= 0)
-							pathElems.add(el);
-						else
+					} else if (element.equals(".") == false)
+						if (lev >= 0) {
+							pathElements.add(element);
+						} else {
 							lev++;
-					if (f) {
-						s = i;
+						}
+					
+					if (found) {
+						startIndex = i;
 						break;
 					}
-					s = -1;
+					startIndex = -1;
 				}
 			}
 		}
-		if (s > 0) {
-			String el = new String(pa, s, n - s);
+		
+		if (startIndex > 0) {
+			String el = new String(pathChars, startIndex, n - startIndex);
 			if (el.equals("..")) {
-				if (pathElems.size() > 0)
-					pathElems.remove(pathElems.size() - 1);
+				if (pathElements.size() > 0) {
+					pathElements.remove(pathElements.size() - 1);
+				}
 				// else exception ?
-			} else if (el.equals(".") == false)
-				if (lev >= 0)
-					pathElems.add(el);
-		} else
-			pathElems.add("");
-		if (pathElems.size() == 0)
+			} else if (el.equals(".") == false) {
+				if (lev >= 0) {
+					pathElements.add(el);
+				}
+			}
+		} else {
+			pathElements.add("");
+		}
+		
+		if (pathElements.size() == 0) {
 			return lev >= 0 ? "" : null;
+		}
+		
 		StringBuffer result = new StringBuffer(n);
-		result.append(pathElems.get(0));
-		n = pathElems.size();
-		for (int i = 1; i < n; i++)
-			result.append('/').append(pathElems.get(i));
+		result.append(pathElements.get(0));
+		n = pathElements.size();
+		for (int i = 1; i < n; i++) {
+			result.append('/').append(pathElements.get(i));
+		}
+		
 		// System.err.println("Before "+path+" after "+result);
 		return result.toString();
 	}
@@ -632,45 +734,51 @@ public class Utils {
 	public static long copyStream(InputStream in, OutputStream out, long maxLen) throws IOException {
 		byte[] buf = new byte[COPY_BUF_SIZE];
 		int len;
-		long tot = 0;
-		if (maxLen <= 0)
+		long total = 0;
+		if (maxLen <= 0) {
 			while ((len = in.read(buf)) > 0) {
 				out.write(buf, 0, len);
-				tot += len;
+				total += len;
 			}
-		else
-			while ((len = in.read(buf)) > 0)
+		} else {
+			while ((len = in.read(buf)) > 0) {
 				if (len <= maxLen) {
 					out.write(buf, 0, len);
 					maxLen -= len;
-					tot += len;
+					total += len;
 				} else {
 					out.write(buf, 0, (int) maxLen);
-					tot += maxLen;
+					total += maxLen;
 					break;
 				}
-		return tot;
+			}
+		}
+		
+		return total;
 	}
 	
 	// / Copy the input to the output until EOF.
 	public static void copyStream(Reader in, Writer out) throws IOException {
 		char[] buf = new char[COPY_BUF_SIZE];
 		int len;
-		while ((len = in.read(buf)) != -1)
+		while ((len = in.read(buf)) != -1) {
 			out.write(buf, 0, len);
+		}
 	}
 	
 	// / Copy the input to the output until EOF.
 	public static void copyStream(Reader in, OutputStream out, String charSet) throws IOException {
 		char[] buf = new char[4096];
 		int len;
-		if (charSet == null)
+		if (charSet == null) {
 			while ((len = in.read(buf)) != -1) {
 				out.write(new String(buf, 0, len).getBytes());
 			}
-		else
-			while ((len = in.read(buf)) != -1)
+		} else {
+			while ((len = in.read(buf)) != -1) {
 				out.write(new String(buf, 0, len).getBytes(charSet));
+			}
+		}
 	}
 	
 	protected final static char BASE64ARRAY[] = { 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '/' };
@@ -679,7 +787,7 @@ public class Utils {
 	 * base 64 encoding, string converted to bytes using specified encoding
 	 * 
 	 * @param String
-	 *            <val>_s</val> original string to encode
+	 *            <val>textString</val> original string to encode
 	 * @param String
 	 *            encoding, can be null, then iso-8859-1 used
 	 * @return String result of encoding as iso-8859-1 string<br>
@@ -687,16 +795,20 @@ public class Utils {
 	 * @exception no
 	 *                exceptions
 	 */
-	public final static String base64Encode(String _s, String _enc) {
-		if (_s == null)
+	public final static String base64Encode(String textString, String encoding) {
+		if (IOHelper.isNull(textString)) {
 			return null;
-		if (_enc == null)
-			_enc = ISO_8859_1;
-		try {
-			return base64Encode(_s.getBytes(_enc));
-		} catch (Exception e) {
-			e.printStackTrace();
+		} else if (!IOHelper.isNullOrEmpty(textString)) {
+			if (IOHelper.isNullOrEmpty(encoding)) {
+				encoding = IOHelper.ISO_8859_1;
+			}
+			try {
+				return base64Encode(textString.getBytes(encoding));
+			} catch (Exception ex) {
+				LogManager.error(ex);
+			}
 		}
+		
 		return null;
 	}
 	
@@ -730,8 +842,9 @@ public class Utils {
 				if (i >= _bytes.length) {
 					b3 = 0;
 					pad = 1;
-				} else
+				} else {
 					b3 = (0xFF & _bytes[i++]);
+				}
 			}
 			byte c1 = (byte) (b1 >> 2);
 			byte c2 = (byte) (((b1 & 0x3) << 4) | (b2 >> 4));
@@ -750,6 +863,7 @@ public class Utils {
 					break;
 			}
 		}
+		
 		return encodedBuffer.toString();
 	}
 	
@@ -793,13 +907,11 @@ public class Utils {
 					-9, -9, -9, -9 // Decimal 123 - 126
 	};
 	
-	protected final static byte WHITE_SPACE_ENC = -5; // Indicates white space
+	// Indicates white space in encoding
+	protected final static byte WHITE_SPACE_ENC = -5;
 	
-	// in encoding
-	
-	protected final static byte EQUALS_SIGN_ENC = -1; // Indicates equals sign
-	
-	// in encoding
+	// Indicates equals sign in encoding
+	protected final static byte EQUALS_SIGN_ENC = -1;
 	
 	/** The equals sign (=) as a byte. */
 	protected final static byte EQUALS_SIGN = (byte) '=';
@@ -814,15 +926,20 @@ public class Utils {
 	 * @return result of encoding, or null if encoding invalid or string null,
 	 *         or string is invalid base 64 encoding
 	 */
-	public final static String base64Decode(String _s, String _enc) {
-		if (_s == null)
+	public final static String base64Decode(String base64Encoded, String encoding) {
+		if (IOHelper.isNull(base64Encoded)) {
 			return null;
-		if (_enc == null)
-			_enc = ISO_8859_1;
-		try {
-			return new String(decode64(_s), _enc);
-		} catch (UnsupportedEncodingException uee) {
+		} else if (!IOHelper.isNullOrEmpty(base64Encoded)) {
+			if (IOHelper.isNullOrEmpty(encoding)) {
+				encoding = IOHelper.ISO_8859_1;
+			}
+			try {
+				return new String(decode64(base64Encoded), encoding);
+			} catch (UnsupportedEncodingException ex) {
+				LogManager.error(ex);
+			}
 		}
+		
 		return null;
 	}
 	
@@ -831,7 +948,8 @@ public class Utils {
 	 * bytes (up to three of them) to <var>destination</var>. The source and
 	 * destination arrays can be manipulated anywhere along their length by
 	 * specifying <var>srcOffset</var> and <var>destOffset</var>. This method
-	 * does not check to make sure your arrays are large enough to accomodate
+	 * does not
+	 * check to make sure your arrays are large enough to accomodate
 	 * <var>srcOffset</var> + 4 for the <var>source</var> array or
 	 * <var>destOffset</var> + 3
 	 * for the <var>destination</var> array. This method returns the actual
@@ -941,8 +1059,9 @@ public class Utils {
 						b4Posn = 0;
 						
 						// If that was the equals sign, break out of 'for' loop
-						if (sbiCrop == EQUALS_SIGN)
+						if (sbiCrop == EQUALS_SIGN) {
 							break;
+						}
 					} // end if: quartet built
 					
 				} // end if: equals sign or better
@@ -968,15 +1087,15 @@ public class Utils {
 	 * @return the decoded data
 	 * @since 1.4
 	 */
-	public static byte[] decode64(String s) {
+	public static byte[] decode64(String string) {
 		byte[] bytes;
 		try {
-			bytes = s.getBytes(ISO_8859_1);
-		} // end try
-		catch (java.io.UnsupportedEncodingException uee) {
-			bytes = s.getBytes();
-		} // end catch
-			// </change>
+			bytes = string.getBytes(IOHelper.ISO_8859_1);
+		} catch (java.io.UnsupportedEncodingException uee) {
+			bytes = string.getBytes();
+		}
+		
+		// </change>
 		
 		// Decode
 		bytes = decode(bytes, 0, bytes.length);
@@ -1000,35 +1119,23 @@ public class Utils {
 					
 					while ((length = gzis.read(buffer)) >= 0) {
 						baos.write(buffer, 0, length);
-					} // end while: reading input
+					}
 					
 					// No error? Get new bytes.
 					bytes = baos.toByteArray();
 					
-				} // end try
-				catch (java.io.IOException e) {
+				} catch (java.io.IOException e) {
 					// Just return originally-decoded bytes
-				} // end catch
-				finally {
-					try {
-						baos.close();
-					} catch (Exception e) {
-					}
-					try {
-						gzis.close();
-					} catch (Exception e) {
-					}
-					try {
-						bais.close();
-					} catch (Exception e) {
-					}
-				} // end finally
-				
+				} finally {
+					IOHelper.closeSilently(baos);
+					IOHelper.closeSilently(gzis);
+					IOHelper.closeSilently(bais);
+				}
 			} // end if: gzipped
 		} // end if: bytes.length >= 2
 		
 		return bytes;
-	} // end decode
+	}
 	
 	/**
 	 * calculate local file based class path for class loader if possible
@@ -1038,88 +1145,93 @@ public class Utils {
 	 *            class loader
 	 * @return class path in string
 	 */
-	static public String calculateClassPath(ClassLoader cl) {
+	static public String calculateClassPath(ClassLoader classLoader) {
 		// scan cl chain to find
 		StringBuffer classPath = new StringBuffer();
 		boolean jspFound = false, servletFound = false;
-		while (cl != null) {
-			if (cl instanceof URLClassLoader) {
+		while (classLoader != null) {
+			if (classLoader instanceof URLClassLoader) {
 				boolean addClasses = false;
 				if (jspFound == false) {
-					jspFound = ((URLClassLoader) cl).findResource("javax/servlet/jsp/JspPage.class") != null;
+					jspFound = ((URLClassLoader) classLoader).findResource("javax/servlet/jsp/JspPage.class") != null;
 					addClasses |= jspFound;
 				}
 				if (servletFound == false) {
-					servletFound = ((URLClassLoader) cl).findResource("javax/servlet/http/HttpServlet.class") != null;
+					servletFound = ((URLClassLoader) classLoader).findResource("javax/servlet/http/HttpServlet.class") != null;
 					addClasses |= servletFound;
 				}
 				if (addClasses) {
-					URL[] urls = ((URLClassLoader) cl).getURLs();
+					URL[] urls = ((URLClassLoader) classLoader).getURLs();
 					for (int i = 0; i < urls.length; i++) {
 						String classFile = toFile(urls[i]);
-						if (classFile == null)
+						if (classFile == null) {
 							continue;
-						if (classPath.length() > 0)
+						}
+						if (classPath.length() > 0) {
 							classPath.append(File.pathSeparatorChar).append(classFile);
-						else
+						} else {
 							classPath.append(classFile);
+						}
 					}
 				}
-				if (jspFound && servletFound)
+				
+				if (jspFound && servletFound) {
 					return classPath.toString();
+				}
 			}
-			cl = cl.getParent();
+			classLoader = classLoader.getParent();
 		}
+		
 		return System.getProperty("java.class.path");
 	}
 	
-	public static int parseInt(Object num, int def) {
-		if (num instanceof Number)
-			return ((Number) num).intValue();
+	/**
+	 * 
+	 * @param numObject
+	 * @param defValue
+	 * @return
+	 */
+	public static int parseInt(Object numObject, int defValue) {
+		if (numObject instanceof Number) {
+			return ((Number) numObject).intValue();
+		}
 		try {
-			return Integer.parseInt(num.toString());
-		} catch (Exception e) {
-			return def;
+			return Integer.parseInt(numObject.toString());
+		} catch (Exception ex) {
+			return defValue;
 		}
 	}
 	
 	public static final String toFile(URL url) {
-		if (url.getProtocol().indexOf("file") < 0)
+		if (url.getProtocol().indexOf("file") < 0) {
 			return null;
+		}
+		
 		String result = url.getPath();
-		if (result.charAt(0) == '/' && File.separatorChar == '\\')
+		if (result.charAt(0) == '/' && File.separatorChar == '\\') {
 			result = result.substring(1);
+		}
+		
 		try {
-			return decode(result, "UTF-8");
-		} catch (UnsupportedEncodingException e) {
+			return decode(result, IOHelper.UTF_8);
+		} catch (UnsupportedEncodingException ex) {
 			return result;
 		}
 	}
 	
-	// public static final int firstOccurrence(String s, String occur) {
-	//
-	// }
-	
-	public static interface ThreadFactory {
-		Thread create(Runnable runnable);
-	}
-	
+	/**
+	 * ThreadPool
+	 */
 	public static final class ThreadPool {
 		static final int DEF_MAX_POOLED_THREAD = 20;
-		
 		static final String ID = "Acme.Utils.ThreadPool";
-		
 		public static final String MAXNOTHREAD = ID + ".maxpooledthreads";
 		
 		protected static int counter;
-		
-		protected ArrayList freeThreads;
-		
-		protected HashMap busyThreads;
-		
+		protected ArrayList<PooledThread> freeThreads;
+		protected HashMap<PooledThread, PooledThread> busyThreads;
 		protected int maxThreads;
-		
-		protected ThreadFactory threadFactory;
+		protected ThreadPoolFactory threadFactory;
 		
 		/**
 		 * Creates a thread pool not queued with max number of threads defined
@@ -1130,12 +1242,14 @@ public class Utils {
 		 *            THREADSINPOOL not integers, or negative then
 		 *            DEF_MAX_POOLED_THREAD used
 		 */
-		public ThreadPool(Properties properties, ThreadFactory threadfactory) {
+		public ThreadPool(Properties properties, ThreadPoolFactory threadfactory) {
 			maxThreads = parseInt(properties.getProperty(MAXNOTHREAD), DEF_MAX_POOLED_THREAD);
-			if (maxThreads < 0)
+			if (maxThreads < 0) {
 				maxThreads = DEF_MAX_POOLED_THREAD;
-			freeThreads = new ArrayList(maxThreads);
-			busyThreads = new HashMap(maxThreads);
+			}
+			
+			freeThreads = new ArrayList<PooledThread>(maxThreads);
+			busyThreads = new HashMap<PooledThread, PooledThread>(maxThreads);
 			this.threadFactory = threadfactory;
 		}
 		
@@ -1149,8 +1263,9 @@ public class Utils {
 		 *            discarded gracefully
 		 */
 		public void setMaxThreads(int newSize) {
-			if (newSize > 2 || newSize == 0)
+			if (newSize > 2 || newSize == 0) {
 				maxThreads = newSize;
+			}
 		}
 		
 		/**
@@ -1171,70 +1286,85 @@ public class Utils {
 		 *            task for execution
 		 */
 		public void executeThread(Runnable runnable) {
-			PooledThread pt = null;
+			PooledThread pooledThread = null;
 			do {
 				synchronized (freeThreads) {
-					if (freeThreads.size() > 0)
-						pt = (PooledThread) freeThreads.remove(0);
+					if (freeThreads.size() > 0) {
+						pooledThread = freeThreads.remove(0);
+					}
 				}
-				if (pt != null && pt.isAlive() == false)
-					pt = null;
-				if (pt == null)
+				
+				if (pooledThread != null && !pooledThread.isAlive()) {
+					pooledThread = null;
+				}
+				
+				if (pooledThread == null) {
 					synchronized (busyThreads) {
 						if (busyThreads.size() < maxThreads || maxThreads == 0)
-							pt = new PooledThread();
+							pooledThread = new PooledThread();
 					}
-				if (pt == null)
+				}
+				
+				if (pooledThread == null) {
 					synchronized (freeThreads) {
 						try {
 							freeThreads.wait();
-						} catch (InterruptedException ie) {
+						} catch (InterruptedException ex) {
+							// ignore me!
 						}
 					}
-			} while (pt == null);
-			pt.setName("-PooledThread: " + runnable);
-			pt.setRunner(runnable);
+				}
+			} while (pooledThread == null);
+			pooledThread.setName("-PooledThread: " + runnable);
+			pooledThread.setRunner(runnable);
 			synchronized (busyThreads) {
-				busyThreads.put(pt, pt);
+				busyThreads.put(pooledThread, pooledThread);
 			}
 		}
 		
 		protected void finalize() throws Throwable {
 			synchronized (freeThreads) {
-				Iterator i = freeThreads.iterator();
-				while (i.hasNext())
-					((PooledThread) i.next()).interrupt();
+				Iterator<PooledThread> itr = freeThreads.iterator();
+				while (itr.hasNext()) {
+					itr.next().interrupt();
+				}
 			}
+			
 			synchronized (busyThreads) {
-				Iterator i = freeThreads.iterator();
-				while (i.hasNext())
-					((PooledThread) i.next()).interrupt();
+				Iterator<PooledThread> itr = freeThreads.iterator();
+				while (itr.hasNext()) {
+					itr.next().interrupt();
+				}
 			}
 			super.finalize();
 		}
 		
+		/**
+		 * Returns the string representation of this object.
+		 * 
+		 * @return
+		 * @see java.lang.Object#toString()
+		 */
 		public String toString() {
-			if (freeThreads != null && busyThreads != null)
-				return ID + ": free threads " + freeThreads.size() + " busy threads " + busyThreads.size();
-			else
+			if (freeThreads != null && busyThreads != null) {
+				return ID + ": free threads:" + freeThreads.size() + " busy threads:" + busyThreads.size();
+			} else {
 				return ID + ": not initialized yet. " + super.toString();
+			}
 		}
 		
-		class PooledThread implements Runnable {
-			
+		final class PooledThread implements Runnable {
 			Runnable runner;
-			
 			boolean quit;
-			
 			Thread delegateThread;
-			
 			String id = ID + "(" + (counter++) + ")";
 			
 			PooledThread() {
-				if (threadFactory != null)
+				if (threadFactory != null) {
 					delegateThread = threadFactory.create(this);
-				else
+				} else {
 					delegateThread = new Thread(this);
+				}
 				setName("-PooledThread: CREATED");
 				delegateThread.start();
 			}
@@ -1249,19 +1379,22 @@ public class Utils {
 			
 			synchronized public void run() {
 				do {
-					if (runner == null)
+					if (runner == null) {
 						try {
 							this.wait();
 						} catch (InterruptedException ie) {
-							
+							// ignore me!
 						}
+					}
+					
 					if (runner != null) {
 						try {
 							runner.run();
-						} catch (Throwable t) {
-							if (t instanceof ThreadDeath)
-								throw (ThreadDeath) t;
-							t.printStackTrace();
+						} catch (Throwable ex) {
+							if (ex instanceof ThreadDeath) {
+								throw (ThreadDeath) ex;
+							}
+							ex.printStackTrace();
 						} finally {
 							runner = null;
 						}
@@ -1271,9 +1404,12 @@ public class Utils {
 							busyThreads.remove(this);
 							activeThreads = busyThreads.size();
 						}
+						
 						synchronized (freeThreads) {
-							if (freeThreads.size() + activeThreads > maxThreads)
-								break; // discard this thread
+							if (freeThreads.size() + activeThreads > maxThreads) {
+								// discard this thread
+								break;
+							}
 							freeThreads.add(this);
 							delegateThread.setName(ID + "-PooledThread: FREE");
 							freeThreads.notify();
@@ -1287,43 +1423,40 @@ public class Utils {
 				delegateThread.interrupt();
 			}
 			
+			/**
+			 * 
+			 * @param runnable
+			 */
 			synchronized void setRunner(Runnable runnable) {
-				if (runner != null)
+				if (runner != null) {
 					throw new RuntimeException("Invalid worker thread state, current runner not null.");
+				}
 				runner = runnable;
 				this.notifyAll();
 			}
 		}
 	}
 	
-	public static class DummyPrintStream extends PrintStream {
-		public DummyPrintStream() {
-			super(new OutputStream() {
-				public void write(int i) {
-				}
-			});
-		}
-	}
-	
 	public static class SimpleBuffer {
 		byte[] buffer;
-		
-		int fillPos;
-		
+		int fillPosition;
 		byte[] emptyBuffer;
 		
 		public SimpleBuffer() {
-			fillPos = 0;
+			fillPosition = 0;
 			setSize(COPY_BUF_SIZE);
 		}
 		
 		public synchronized void setSize(int size) {
-			if (size < 0)
+			if (size < 0) {
 				throw new IllegalArgumentException("Size can't be negative");
-			if (fillPos <= 0)
+			}
+			
+			if (fillPosition <= 0) {
 				buffer = new byte[size];
-			else
+			} else {
 				throw new IllegalStateException("Can't resize buffer containing data");
+			}
 		}
 		
 		public synchronized int getSize() {
@@ -1332,58 +1465,135 @@ public class Utils {
 		
 		public synchronized byte[] put(byte[] data, int off, int len) {
 			// System.err.println("put in buff:" + len+", fp:"+fillPos);
-			if (buffer.length > fillPos + len) {
-				System.arraycopy(data, off, buffer, fillPos, len);
-				fillPos += len;
+			if (buffer.length > fillPosition + len) {
+				System.arraycopy(data, off, buffer, fillPosition, len);
+				fillPosition += len;
 				return getEmptyBuffer();
 			}
-			byte[] result = new byte[Math.max(fillPos + len - buffer.length, buffer.length)];
+			byte[] result = new byte[Math.max(fillPosition + len - buffer.length, buffer.length)];
 			// System.err.println("fp:" + fillPos + ",bl:" + buffer.length +
 			// ",rl:" + result.length + ",l:" + len);
 			// fill result
 			int rfilled = 0;
-			if (fillPos < result.length) {
-				System.arraycopy(buffer, 0, result, 0, fillPos);
-				rfilled = result.length - fillPos;
-				System.arraycopy(data, off, result, fillPos, rfilled);
-				fillPos = 0;
+			if (fillPosition < result.length) {
+				System.arraycopy(buffer, 0, result, 0, fillPosition);
+				rfilled = result.length - fillPosition;
+				System.arraycopy(data, off, result, fillPosition, rfilled);
+				fillPosition = 0;
 				// System.err.println("1rf:"+rfilled);
 			} else {
 				System.arraycopy(buffer, 0, result, 0, result.length);
-				System.arraycopy(buffer, result.length, buffer, 0, fillPos - result.length);
-				fillPos -= result.length;
+				System.arraycopy(buffer, result.length, buffer, 0, fillPosition - result.length);
+				fillPosition -= result.length;
 				rfilled = 0;
 				// System.err.println("qrf: 0");
 			}
+			
 			if (rfilled < len) {
-				System.arraycopy(data, off + rfilled, buffer, fillPos, len - rfilled);
-				fillPos += len - rfilled;
+				System.arraycopy(data, off + rfilled, buffer, fillPosition, len - rfilled);
+				fillPosition += len - rfilled;
 				// System.err.println("added to buf:"+(len - rfilled));
 			}
+			
 			return result;
 		}
 		
 		public synchronized byte[] get() {
 			// System.err.println("get fp: "+fillPos);
-			if (fillPos <= 0) {
+			if (fillPosition <= 0) {
 				return getEmptyBuffer();
 			}
-			byte[] result = new byte[fillPos];
-			System.arraycopy(buffer, 0, result, 0, fillPos);
-			fillPos = 0;
+			byte[] result = new byte[fillPosition];
+			System.arraycopy(buffer, 0, result, 0, fillPosition);
+			fillPosition = 0;
 			return result;
 		}
 		
 		public synchronized void reset() {
 			// System.err.println("reset buf");
-			fillPos = 0;
+			fillPosition = 0;
 		}
 		
 		private synchronized byte[] getEmptyBuffer() {
-			if (emptyBuffer == null)
+			if (emptyBuffer == null) {
 				emptyBuffer = new byte[0];
+			}
+			
 			return emptyBuffer;
 		}
+	}
+	
+	/**
+	 * Converts the request headers to map.
+	 * 
+	 * @param request
+	 * @return
+	 */
+	public static HashMap<String, List<String>> getRequestHeaders(HttpServletRequest request) {
+		HashMap<String, List<String>> requestHeaders = new HashMap<String, List<String>>();
+		for (Enumeration<String> itr = request.getHeaderNames(); itr.hasMoreElements();) {
+			String name = itr.nextElement();
+			requestHeaders.put(name, Collections.list(request.getHeaders(name)));
+		}
+		
+		return requestHeaders;
+	}
+	
+	/**
+	 * Converts the request parameters as map.
+	 * 
+	 * @param request
+	 * @return
+	 */
+	public static HashMap<String, List<String>> getRequestParameters(HttpServletRequest request) {
+		HashMap<String, List<String>> requestParameters = new HashMap<String, List<String>>();
+		for (Map.Entry<String, String[]> entry : request.getParameterMap().entrySet()) {
+			requestParameters.put(entry.getKey(), Arrays.asList(entry.getValue()));
+		}
+		
+		return requestParameters;
+	}
+	
+	/**
+	 * Converts the request headers to map.
+	 * 
+	 * @param request
+	 * @return
+	 */
+	public static HashMap<String, List<String>> getResponseHeaders(final HttpServletResponse response) {
+		HashMap<String, List<String>> responseHeaders = new HashMap<String, List<String>>();
+		if (response.getHeaderNames() instanceof Collections) {
+			/* TODO - Implement it later. */
+			// for (String name : response.getHeaderNames()) {
+			// responseHeaders.put(name, new
+			// ArrayList<String>(response.getHeaders(name)));
+			// }
+		} else {
+			for (Enumeration<String> itr = response.getHeaderNames(); itr.hasMoreElements();) {
+				String name = itr.nextElement();
+				responseHeaders.put(name, Collections.list(response.getHeaders(name)));
+			}
+		}
+		
+		return responseHeaders;
+	}
+	
+	/**
+	 * Logs the provider information.
+	 *
+	 * @param provider
+	 */
+	public static String toString(final Provider provider) {
+		return (provider == null ? "" : new StringBuilder("Provider - Info:").append(provider.getInfo()).append(", Name:").append(provider.getName()).append(", Services:").append(provider.getServices()).append(", Version:").append(provider.getVersion()).toString());
+	}
+	
+	/**
+	 * Logs the provider information.
+	 *
+	 * @param sslParameters
+	 */
+	public static String toString(final SSLParameters sslParameters) {
+		return (sslParameters == null ? "" : new StringBuilder("SSLParameters - CipherSuites:").append(IOHelper.toString(sslParameters.getCipherSuites())).append(", Protocols:").append(IOHelper.toString(sslParameters.getProtocols())).append(", WantClientAuth:").append(sslParameters.getWantClientAuth()).append(", NeedClientAuth:").append(sslParameters.getNeedClientAuth()).toString());
 	}
 	
 	public static void main(String[] args) {

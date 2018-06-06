@@ -95,29 +95,29 @@ public class ApplicationApplet extends Applet implements Runnable {
 	public void init() {
 		Acme.GuiUtils.handleBgcolor(this);
 		
-		if(textArea == null)
+		if (textArea == null)
 			makeTextArea();
 		
 		String appName = getParameter("CLASS");
-		if(appName == null) {
+		if (appName == null) {
 			showStatus("Missing CLASS parameter");
 			return;
 		}
 		// Hack to accomodate those who use file names instead of class names.
-		if(appName.endsWith(".class"))
+		if (appName.endsWith(".class"))
 			appName = appName.substring(0, appName.length() - 6).replace('/', '.');
-		if(appName.endsWith(".java"))
+		if (appName.endsWith(".java"))
 			appName = appName.substring(0, appName.length() - 5).replace('/', '.');
 		
 		try {
 			app = (Application) Class.forName(appName).newInstance();
-		} catch(ClassNotFoundException e) {
+		} catch (ClassNotFoundException e) {
 			showStatus("Class not found: " + appName);
-		} catch(ClassCastException e) {
+		} catch (ClassCastException e) {
 			showStatus("Class cast problem: " + e.getMessage());
-		} catch(InstantiationException e) {
+		} catch (InstantiationException e) {
 			showStatus("Instantiation problem - " + e.getMessage());
-		} catch(IllegalAccessException e) {
+		} catch (IllegalAccessException e) {
 			showStatus("Illegal class access - " + e.getMessage());
 		}
 		
@@ -136,7 +136,7 @@ public class ApplicationApplet extends Applet implements Runnable {
 	/// Get the ARGS parameter and parse it into an array of Strings.
 	public void getArgs() {
 		String argList = getParameter("ARGS");
-		if(argList == null)
+		if (argList == null)
 			args = new String[0];
 		else
 			args = Acme.Utils.splitStr(argList);
@@ -146,7 +146,7 @@ public class ApplicationApplet extends Applet implements Runnable {
 	
 	/// Called when the applet should start itself.
 	public void start() {
-		if(thread == null) {
+		if (thread == null) {
 			// Start the thread.
 			thread = new Thread(this);
 			thread.start();
@@ -155,7 +155,7 @@ public class ApplicationApplet extends Applet implements Runnable {
 	
 	/// Called when the applet should stop itself.
 	public void stop() {
-		if(thread != null) {
+		if (thread != null) {
 			// Stop the thread.
 			thread.stop();
 			thread = null;
@@ -165,13 +165,13 @@ public class ApplicationApplet extends Applet implements Runnable {
 	/// This is the part of Runnable that we implement - the routine that
 	// gets called when the thread is started.
 	public void run() {
-		if(textArea == null)
+		if (textArea == null)
 			makeTextArea();
-		if(app == null) {
+		if (app == null) {
 			showStatus("No application defined");
 			return;
 		}
-		if(args == null) {
+		if (args == null) {
 			showStatus("No arguments defined");
 			return;
 		}

@@ -19,9 +19,9 @@ public class ImgPasteServer {
 	
 	@OnMessage
 	public void processData(byte[] data) {
-		try (OutputStream os = Files.newOutputStream(Paths.get(imageName))) {
+		try(OutputStream os = Files.newOutputStream(Paths.get(imageName))) {
 			os.write(data);
-		} catch (IOException e) {
+		} catch(IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}

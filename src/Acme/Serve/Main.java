@@ -1,30 +1,30 @@
-/* tjws - Main.java
- * Copyright (C) 1999-2007 Dmitriy Rogatkin.  All rights reserved.
+/*
+ * tjws - Main.java
+ * Copyright (C) 1999-2007 Dmitriy Rogatkin. All rights reserved.
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
  * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
+ * notice, this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in the
- *    documentation and/or other materials provided with the distribution.
- *  THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
- *  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- *  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- *  ARE DISCLAIMED. IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE FOR
- *  ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- *  DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
- *  SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
- *  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- *  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
- *  OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
- *  SUCH DAMAGE.
- *  
- *  Visit http://tjws.sourceforge.net to get the latest information
- *  about Rogatkin's products.                                                        
- *  $Id: Main.java,v 1.25 2013/07/24 06:20:37 cvs Exp $                
- *  Created on Feb 22, 2007
- *  @author Dmitriy
+ * notice, this list of conditions and the following disclaimer in the
+ * documentation and/or other materials provided with the distribution.
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
+ * Visit http://tjws.sourceforge.net to get the latest information
+ * about Rogatkin's products.
+ * $Id: Main.java,v 1.25 2013/07/24 06:20:37 cvs Exp $
+ * Created on Feb 22, 2007
+ * @author Dmitriy
  */
 package Acme.Serve;
 
@@ -50,11 +50,8 @@ import Acme.Utils;
 
 public class Main extends Serve {
 	public static final String CLI_FILENAME = "cmdparams";
-	
 	private static final String progName = "Serve";
-	
 	protected static Serve serve;
-	
 	private static Thread sdHook;
 	
 	/**
@@ -63,8 +60,7 @@ public class Main extends Serve {
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		// int code = main1(args);
-		Runtime.getRuntime().halt(main1(args));
+		Runtime.getRuntime().halt(runMain(args));
 	}
 	
 	/**
@@ -72,21 +68,23 @@ public class Main extends Serve {
 	 * 
 	 * @param args
 	 */
-	public static int main1(String[] args) {
+	public static int runMain(String[] args) {
 		String workPath = System.getProperty("user.dir", ".");
 		StringBuffer messages = null;
 		
 		int argc = args.length;
 		int argn;
-		if (argc == 0) { // a try to read from file for java -jar server.jar
+		if (argc == 0) {
+			// a try to read from file for java -jar server.jar
 			args = readArguments(workPath, CLI_FILENAME);
 			if (args == null) {
 				messages = appendMessage(messages, "Can't read from CLI file (" + CLI_FILENAME + ") at " + workPath + "\n");
-			} else
+			} else {
 				argc = args.length;
+			}
 		}
 		
-		Map arguments = new HashMap(20);
+		Map<Object, Object> arguments = new HashMap<Object, Object>(20);
 		arguments.put(ARG_WORK_DIRECTORY, workPath);
 		// Parse args.
 		// TODO: redesign process of parameters based on a map
@@ -108,15 +106,14 @@ public class Main extends Serve {
 				arguments.put(ARG_ALIASES, args[argn]);
 			} else if (args[argn].equals("-b") && argn + 1 < argc) {
 				++argn;
-				if (arguments.containsKey(ARG_BINDADDRESS))
+				if (arguments.containsKey(ARG_BINDADDRESS)) {
 					messages = appendMessage(messages, "Multiple usage of a bind address. " + args[argn] + " ignored\n");
-				else
+				} else {
 					arguments.put(ARG_BINDADDRESS, args[argn]);
+				}
 			} else if (args[argn].equals("-k") && argn + 1 < argc) {
 				++argn;
-				arguments.put(ARG_BACKLOG, args[argn]/*
-														 * new Integer(args[argn])
-														 */);
+				arguments.put(ARG_BACKLOG, args[argn]);
 			} else if (args[argn].equals("-j") && argn + 1 < argc) {
 				++argn;
 				arguments.put(ARG_JSP, args[argn]);
@@ -159,8 +156,9 @@ public class Main extends Serve {
 						++argn;
 						arguments.put(ARG_ACCESS_LOG_FMT, args[argn]);
 					}
-				} else
+				} else {
 					arguments.put(ARG_LOG_OPTIONS, "");
+				}
 			} else if (args[argn].startsWith("-nohup")) {
 				arguments.put(ARG_NOHUP, ARG_NOHUP);
 			} else if (args[argn].equals("-m") && argn + 1 < argc) {
@@ -182,8 +180,9 @@ public class Main extends Serve {
 					} catch (Exception ex) {
 						messages = appendMessage(messages, "Exception in processing class parameter of error redirection stream: ").append(ex).append('\n');
 					}
-				} else
+				} else {
 					arguments.put(ARG_ERR, System.err);
+				}
 			} else if (args[argn].equals("-out")) {
 				if (argn + 1 < argc && args[argn + 1].startsWith("-") == false) {
 					++argn;
@@ -201,37 +200,44 @@ public class Main extends Serve {
 				arguments.put(ARG_SECUREONLY_SC, ARG_SECUREONLY_SC);
 			} else if (args[argn].equals("-g") && argn + 1 < argc) {
 				arguments.put(ARG_LOGROLLING_LINES, Integer.valueOf(args[++argn]));
-			} else if (args[argn].startsWith("-")) { // free args, note it
-														// generate problem
-														// since free arguments
-														// can match internal
-														// arguments
+			} else if (args[argn].startsWith("-")) {
+				/*
+				 * free args, note it generate problem since free arguments can
+				 * match internal arguments
+				 */
 				if (args[argn].length() > 1) {
 					String name = args[argn].substring(1);
 					if (arguments.containsKey(name))
 						messages = appendMessage(messages, "Multiple usage of  '-" + name + "'=" + args[++argn] + " ignored\n");
 					else
 						arguments.put(name, // .toUpperCase(),
-										argn < argc - 1 ? args[++argn] : "");
+								argn < argc - 1 ? args[++argn] : "");
 					// System.out.println("Added free
 					// arg:"+args[argn-1]+"="+args[argn]);
-				} else
+				} else {
 					messages = appendMessage(messages, "Parameter '-' ignored, perhaps extra blank separator was used.\n");
-			} else
+				}
+			} else {
 				usage();
+			}
 			
 			++argn;
 		}
-		if (argn != argc)
+		
+		if (argn != argc) {
 			usage();
-		if (System.getProperty(DEF_PROXY_CONFIG) != null)
+		}
+		
+		if (System.getProperty(DEF_PROXY_CONFIG) != null) {
 			arguments.put(ARG_PROXY_CONFIG, System.getProperty(DEF_PROXY_CONFIG));
+		}
+		
 		// log and error stream manipulation
 		// TODO add log rotation feature, it can be done as plug-in
 		PrintStream printstream = System.err;
-		if (arguments.get(ARG_OUT) != null)
+		if (arguments.get(ARG_OUT) != null) {
 			printstream = (PrintStream) arguments.get(ARG_OUT);
-		else {
+		} else {
 			String logEncoding = System.getProperty(DEF_LOGENCODING);
 			try {
 				File logDir = new File(workPath);
@@ -246,12 +252,14 @@ public class Main extends Serve {
 				File logFile = new File(logDir, "TJWS-" + System.currentTimeMillis() + ".log");
 				int logRollThreshold = arguments.get(ARG_LOGROLLING_LINES) != null ? ((Integer) arguments.get(ARG_LOGROLLING_LINES)).intValue() : 0;
 				OutputStream logStream = logRollThreshold > 1000 ? (OutputStream) new RollingOutputStream(logFile, logRollThreshold) : (OutputStream) new FileOutputStream(logFile);
-				if (logEncoding != null)
-					printstream = new PrintStream(logStream, true, logEncoding); /* 1.4 */
-				else
+				if (logEncoding != null) {
+					/* 1.4 */
+					printstream = new PrintStream(logStream, true, logEncoding);
+				} else {
 					printstream = new PrintStream(logStream, true);
-			} catch (IOException e) {
-				System.err.println("I/O problem at setting a log stream " + e);
+				}
+			} catch (IOException ex) {
+				System.err.println("I/O problem at setting a log stream " + ex);
 			}
 		}
 		if (arguments.get(ARG_ERR) != null) {
@@ -259,29 +267,35 @@ public class Main extends Serve {
 		} else {
 			System.setErr(printstream);
 		}
-		if (messages != null)
+		if (messages != null) {
 			System.err.println(messages);
+		}
 		/**
 		 * format path mapping from=givenpath;dir=realpath
 		 */
 		PathTreeDictionary mappingtable = new PathTreeDictionary();
 		if (arguments.get(ARG_ALIASES) != null) {
 			File file = new File((String) arguments.get(ARG_ALIASES));
-			if (file.isAbsolute() == false)
+			if (file.isAbsolute() == false) {
 				file = new File(workPath, file.getPath());
+			}
+			
 			if (file.exists() && file.canRead()) {
 				try {
 					// DataInputStream in = new DataInputStream(
 					// new FileInputStream(file));
 					BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
 					do {
-						String mappingstr = in.readLine(); // no arguments in
-															// non ASCII
-															// encoding allowed
-						if (mappingstr == null)
+						// no arguments in non ASCII encoding allowed
+						String mappingstr = in.readLine();
+						if (mappingstr == null) {
 							break;
-						if (mappingstr.startsWith("#"))
+						}
+						
+						if (mappingstr.startsWith("#")) {
 							continue;
+						}
+						
 						StringTokenizer maptokenzr = new StringTokenizer(mappingstr, "=;");
 						if (maptokenzr.hasMoreTokens()) {
 							if (maptokenzr.nextToken("=").equalsIgnoreCase("from")) {
@@ -309,6 +323,8 @@ public class Main extends Serve {
 							}
 						}
 					} while (true);
+					
+					in.close();
 				} catch (IOException e) {
 					System.err.println("TJWS: Problem reading aliases file: " + arguments.get(ARG_ALIASES) + "/" + e);
 				}
@@ -324,13 +340,16 @@ public class Main extends Serve {
 				if (file.isAbsolute() == false)
 					file = new File(workPath, file.getPath());
 				BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
-				
 				do {
 					String realmstr = in.readLine();
-					if (realmstr == null)
+					if (realmstr == null) {
 						break;
-					if (realmstr.startsWith("#"))
+					}
+					
+					if (realmstr.startsWith("#")) {
 						continue;
+					}
+					
 					StringTokenizer rt = new StringTokenizer(realmstr, "=,:");
 					if (rt.hasMoreTokens()) {
 						String realmname = null;
@@ -344,14 +363,15 @@ public class Main extends Serve {
 									String password = rt.nextToken();
 									BasicAuthRealm realm = null;
 									Object o[] = realms.get(realmPath);
-									if (o != null && o[0] != null)
+									if (o != null && o[0] != null) {
 										realm = (BasicAuthRealm) o[0];
-									else {
+									} else {
 										realm = new BasicAuthRealm(realmname);
-										if (realmPath.endsWith("/*") == false)
+										if (realmPath.endsWith("/*") == false) {
 											realmPath += "/*";
-										else if (realmPath.endsWith("/"))
+										} else if (realmPath.endsWith("/")) {
 											realmPath += "*";
+										}
 										realms.put(realmPath, realm);
 									}
 									realm.put(user, password);
@@ -360,6 +380,8 @@ public class Main extends Serve {
 						}
 					}
 				} while (true);
+				
+				in.close();
 			} catch (IOException ioe) {
 				System.err.println("TJWS: I/O problem in reading realms file " + arguments.get(ARG_REALMS) + ": " + ioe);
 			}
@@ -374,26 +396,29 @@ public class Main extends Serve {
 			tempFile = new File(workPath, tempFile.getPath());
 		final File servFile = tempFile;
 		// TODO analyze possible race condition
-		if (servFile != null)
+		if (servFile != null) {
 			new Thread(new Runnable() {
 				public void run() {
 					readServlets(servFile);
 				}
 			}).start();
+		}
 		// And add the standard Servlets.
 		String throttles = (String) arguments.get(ARG_THROTTLES);
-		if (throttles == null)
+		if (throttles == null) {
 			serve.addDefaultServlets((String) arguments.get(ARG_CGI_PATH));
-		else
+		} else {
 			try {
 				serve.addDefaultServlets((String) arguments.get(ARG_CGI_PATH), throttles);
 			} catch (IOException e) {
 				serve.log("Problem reading throttles file: " + e, e);
 				System.exit(1);
 			}
+		}
+		
 		serve.addWebsocketProvider((String) arguments.get(ARG_WEBSOCKET));
 		serve.addWarDeployer((String) arguments.get(ARG_WAR), throttles);
-		if (arguments.get(ARG_NOHUP) == null)
+		if (arguments.get(ARG_NOHUP) == null) {
 			new Thread(new Runnable() {
 				public void run() {
 					BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
@@ -413,35 +438,44 @@ public class Main extends Serve {
 					}
 				}
 			}, "Stop Monitor").start();
-		else {
-			Runtime.getRuntime().addShutdownHook(sdHook = new Thread(new Runnable() {
+		} else {
+			sdHook = new Thread(new Runnable() {
 				synchronized public void run() {
 					serve.destroyAllServlets();
 				}
-			}, "ShutDownHook"));
+			}, "ShutDownHook");
+			Runtime.getRuntime().addShutdownHook(sdHook);
 		}
+		
 		// And run.
-		int code = serve.serve();
-		if (code != 0 && arguments.get(ARG_NOHUP) == null)
+		Status code = serve.serve();
+		if (code != Status.STOPPED && arguments.get(ARG_NOHUP) == null) {
 			try {
+				// to break termination thread
 				System.out.println();
-				System.in.close(); // to break termination thread
-			} catch (IOException e) {
+				System.in.close();
+			} catch (IOException ex) {
+				serve.log(ex);
 			}
+		}
+		
 		try {
-			if (sdHook != null)
+			if (sdHook != null) {
 				Runtime.getRuntime().removeShutdownHook(sdHook);
+			}
 			serve.destroyAllServlets();
 		} catch (IllegalStateException ise) {
 			
-		} catch (Throwable t) {
-			if (t instanceof ThreadDeath)
-				throw (ThreadDeath) t;
-			serve.log("At destroying ", t);
+		} catch (Throwable th) {
+			if (th instanceof ThreadDeath) {
+				throw (ThreadDeath) th;
+			}
+			serve.log("At destroying ", th);
 		}
 		killAliveThreads();
 		printstream.close();
-		return code;
+		
+		return code.getStatus();
 	}
 	
 	private static StringBuffer appendMessage(StringBuffer messages, String message) {
@@ -485,16 +519,18 @@ public class Main extends Serve {
 		
 		Thread[] ts = new Thread[ac];
 		ac = tg.enumerate(ts, true);
-		if (ac == ts.length)
+		if (ac == ts.length) {
 			serve.log("Destroy:interruptRunningProcesses: Not all threads will be stopped.");
+		}
 		// kill non daemon
-		for (int i = 0; i < ac; i++)
+		for (int i = 0; i < ac; i++) {
 			if (ts[i].isDaemon() == false) {
 				String tn = ts[i].getName();
 				// System.err.println("Interrupting and kill " + tn);
-				
-				if (ts[i] == Thread.currentThread() || "Stop Monitor".equals(tn) || "ShutDownHook".equals(tn) || "DestroyJavaVM".equals(tn) || (tn != null && tn.startsWith("AWT-")) || "main".equals(tn))
+				if (ts[i] == Thread.currentThread() || "Stop Monitor".equals(tn) || "ShutDownHook".equals(tn) || "DestroyJavaVM".equals(tn) || (tn != null && tn.startsWith("AWT-")) || "main".equals(tn)) {
 					continue;
+				}
+				
 				ts[i].interrupt();
 				Thread.yield();
 				if (ts[i].isAlive()) {
@@ -509,7 +545,8 @@ public class Main extends Serve {
 					}
 				}
 			} // else
-		// serve.log("Daemon thread "+ts[i].getName()+" is untouched.");
+				// serve.log("Daemon thread "+ts[i].getName()+" is untouched.");
+		}
 	}
 	
 	private static void readServlets(File servFile) {
@@ -575,6 +612,8 @@ public class Main extends Serve {
 						}
 					}
 				} while (true);
+				
+				in.close();
 			} catch (IOException e) {
 				serve.log("IO problem in processing servlets definition file (" + servFile + "): " + e);
 			}

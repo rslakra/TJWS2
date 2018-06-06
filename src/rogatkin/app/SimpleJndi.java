@@ -1,30 +1,30 @@
-/* tjws - SimpleJndi.java
- * Copyright (C) 1999-2010 Dmitriy Rogatkin.  All rights reserved.
+/*
+ * tjws - SimpleJndi.java
+ * Copyright (C) 1999-2010 Dmitriy Rogatkin. All rights reserved.
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
  * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
+ * notice, this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in the
- *    documentation and/or other materials provided with the distribution.
- *  THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
- *  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- *  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- *  ARE DISCLAIMED. IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE FOR
- *  ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- *  DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
- *  SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
- *  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- *  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
- *  OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
- *  SUCH DAMAGE.
- *  
- *  Visit http://tjws.sourceforge.net to get the latest information
- *  about Rogatkin's products.                                                        
- *  $Id: SimpleJndi.java,v 1.21 2013/03/12 07:58:20 cvs Exp $                
- *  Created on Mar 25, 2007
- *  @author Dmitriy
+ * notice, this list of conditions and the following disclaimer in the
+ * documentation and/or other materials provided with the distribution.
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
+ * Visit http://tjws.sourceforge.net to get the latest information
+ * about Rogatkin's products.
+ * $Id: SimpleJndi.java,v 1.21 2013/03/12 07:58:20 cvs Exp $
+ * Created on Mar 25, 2007
+ * @author Dmitriy
  */
 package rogatkin.app;
 
@@ -73,13 +73,13 @@ import org.omg.CORBA.COMM_FAILURE;
 import org.omg.CORBA.ORB;
 import org.omg.CORBA.SystemException;
 
+import Acme.Serve.Serve;
 import rogatkin.app.remote.bind;
 import rogatkin.app.remote.bind_listHolder;
 import rogatkin.app.remote.naming_exception;
 import rogatkin.app.remote.simple_naming;
 import rogatkin.app.remote.simple_namingHelper;
 import rogatkin.app.remote.simple_namingPOA;
-import Acme.Serve.Serve;
 
 /**
  * Simple JNDI naming service
@@ -93,9 +93,7 @@ import Acme.Serve.Serve;
 
 public class SimpleJndi implements InitialContextFactory {
 	public static final char NAME_SEP_CHAR = '/';
-	
 	public static final String NAME_SEP = "" + NAME_SEP_CHAR; // can be "\\."
-	
 	public static final String NAME_SEP_REGEXP = NAME_SEP;
 	
 	static ORB orb;
@@ -149,34 +147,63 @@ public class SimpleJndi implements InitialContextFactory {
 		return context;
 	}
 	
+	/**
+	 * 
+	 * @author Rohtash Singh Lakra
+	 * @date 03/19/2018 05:33:35 PM
+	 */
+	static class RootContextServlet extends HttpServlet {
+		protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, java.io.IOException {
+			if (mainContext != null) {
+				try {
+					resp.setContentType("text/plain");
+					resp.getWriter().write(orb.object_to_string(rootPoa.servant_to_reference(mainContext)));
+				} catch (org.omg.CORBA.UserException ce) {
+					ce.printStackTrace();
+					resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+				}
+			} else
+				resp.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
+		}
+	}
+	
+	/**
+	 * 
+	 * @author Rohtash Singh Lakra
+	 * @date 03/19/2018 05:37:46 PM
+	 */
+	static class ShutdownHook implements Runnable {
+		final Serve serve;
+		
+		public ShutdownHook(final Serve serve) {
+			this.serve = serve;
+		}
+		
+		/**
+		 * (non-Javadoc)
+		 * 
+		 * @see java.lang.Runnable#run()
+		 */
+		@Override
+		public void run() {
+			if (serve != null) {
+				serve.notifyStop();
+				serve.destroyAllServlets();
+			}
+		}
+	}
+	
 	private SimpleContext exposeContext(SimpleContext context, String host, int port) {
 		final Serve srv = new Acme.Serve.Serve();
 		Properties properties = new java.util.Properties();
 		properties.put(Serve.ARG_PORT, port);
 		properties.put(Serve.ARG_NOHUP, Serve.ARG_NOHUP);
-		if (host != null && host.length() > 0 && "localhost".equals(host) == false)
+		if (host != null && host.length() > 0 && "localhost".equals(host) == false) {
 			properties.put(Serve.ARG_BINDADDRESS, host);
+		}
 		srv.arguments = properties;
-		srv.addServlet("/getRootContext", new HttpServlet() {
-			protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, java.io.IOException {
-				if (mainContext != null) {
-					try {
-						resp.setContentType("text/plain");
-						resp.getWriter().write(orb.object_to_string(rootPoa.servant_to_reference(mainContext)));
-					} catch (org.omg.CORBA.UserException ce) {
-						ce.printStackTrace();
-						resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-					}
-				} else
-					resp.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
-			}
-		});
-		Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
-			public void run() {
-				srv.notifyStop();
-				srv.destroyAllServlets();
-			}
-		}));
+		srv.addServlet("/getRootContext", new RootContextServlet());
+		Runtime.getRuntime().addShutdownHook(new Thread(new ShutdownHook(srv)));
 		Thread exposerThread = new Thread("ContextExposer") {
 			public void run() {
 				srv.serve();
@@ -188,6 +215,12 @@ public class SimpleJndi implements InitialContextFactory {
 		return context;
 	}
 	
+	/**
+	 * 
+	 * @param url
+	 * @return
+	 * @throws IOException
+	 */
 	private byte[] readUrl(URL url) throws IOException {
 		URLConnection uc = url.openConnection();
 		uc.setRequestProperty("connection", "close");

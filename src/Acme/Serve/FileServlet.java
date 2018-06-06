@@ -6,15 +6,15 @@
 // modification, are permitted provided that the following conditions
 // are met:
 // 1. Redistributions of source code must retain the above copyright
-//    notice, this list of conditions and the following disclaimer.
+// notice, this list of conditions and the following disclaimer.
 // 2. Redistributions in binary form must reproduce the above copyright
-//    notice, this list of conditions and the following disclaimer in the
-//    documentation and/or other materials provided with the distribution.
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
 //
 // THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
 // ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
 // FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
 // DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
 // OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
@@ -25,7 +25,7 @@
 //
 // Visit the ACME Labs Java page for up-to-date versions of this and other
 // fine Java utilities: http://www.acme.com/java/
-// 
+//
 // All enhancements Copyright (C)1998-2005 by Dmitriy Rogatkin
 // http://tjws.sourceforge.net
 
@@ -45,13 +45,14 @@ import java.text.DecimalFormat;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.Enumeration;
-import java.util.zip.GZIPOutputStream; //import java.util.zip.DeflaterOutputStream;
+import java.util.zip.GZIPOutputStream;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import Acme.IOHelper;
 import Acme.Utils;
 
 /// Servlet similar to a standard httpd.
@@ -61,7 +62,8 @@ import Acme.Utils;
 // Redirects directory URLs that lack a trailing /.
 // Handles If-Modified-Since.
 // <P>
-// <A HREF="/resources/classes/Acme/Serve/FileServlet.java">Fetch the software.</A><BR>
+// <A HREF="/resources/classes/Acme/Serve/FileServlet.java">Fetch the
+/// software.</A><BR>
 // <A HREF="/resources/classes/Acme.tar.Z">Fetch the entire Acme package.</A>
 // <P>
 // @see Acme.Serve.Serve
@@ -80,17 +82,14 @@ public class FileServlet extends HttpServlet {
 	static final DecimalFormat lengthftm = new DecimalFormat("#");
 	
 	static final String BYTES_UNIT = "bytes";
-	
-	protected String charSet = Serve.UTF8;// "iso-8859-1";
+	protected String charSet = IOHelper.UTF_8;
 	
 	private static final boolean logenabled = false;
 	
-	// true;
-	
-	private Method canExecute, getFreeSpace; // TODO implement free space
+	// TODO implement free space
+	private Method canExecute, getFreeSpace;
 	
 	private boolean useCompression;
-	
 	private boolean supressIndex;
 	
 	// / Constructor.
@@ -156,7 +155,7 @@ public class FileServlet extends HttpServlet {
 			res.sendError(HttpServletResponse.SC_NOT_IMPLEMENTED, "Method " + req.getMethod());
 			return;
 		}
-		req.setCharacterEncoding(Serve.UTF8);
+		req.setCharacterEncoding(IOHelper.UTF_8);
 		String path = Utils.canonicalizePath(req.getPathInfo());
 		log("Canonical path:" + path + " for " + req.getPathInfo() + " and servelt path " + req.getServletPath());
 		// res.setBufferSize(Utils.COPY_BUF_SIZE/2);
@@ -290,9 +289,9 @@ public class FileServlet extends HttpServlet {
 		}
 		
 		String dnla = req.getHeader("GetContentFeatures.DLNA.ORG"); // check
-																	// also
-																	// Pragma:
-																	// getIfoFileURI.dlna.org
+																	 // also
+																	 // Pragma:
+																	 // getIfoFileURI.dlna.org
 		if ("1".equals(dnla)) {
 			res.setHeader("transferMode.dlna.org", "Streaming");
 			// res.setHeader("contentFeatures.dlna.org",
@@ -344,7 +343,7 @@ public class FileServlet extends HttpServlet {
 	// / Copy a file from in to out.
 	// Sub-classes can override this in order to do filtering of some sort.
 	public void copyStream(InputStream in, OutputStream out, long len) throws IOException {
-		Acme.Utils.copyStream(in, out, len);
+		Utils.copyStream(in, out, len);
 	}
 	
 	private void serveDirectory(HttpServletRequest req, HttpServletResponse res, boolean headOnly, String path, File file) throws IOException {
@@ -387,32 +386,39 @@ public class FileServlet extends HttpServlet {
 				String aFileRead = (aFile.canRead() ? "r" : "-");
 				String aFileWrite = (aFile.canWrite() ? "w" : "-");
 				String aFileExe = "-";
-				if (canExecute != null)
+				if (canExecute != null) {
 					try {
-						if (((Boolean) canExecute.invoke(aFile, Utils.EMPTY_OBJECTS)).booleanValue())
+						if (((Boolean) canExecute.invoke(aFile, Utils.EMPTY_OBJECTS)).booleanValue()) {
 							aFileExe = "x";
+						}
 					} catch (IllegalArgumentException e) {
 					} catch (IllegalAccessException e) {
 					} catch (InvocationTargetException e) {
 					}
+				}
+				
 				String aFileSize = lengthftm.format(aFileLen = aFile.length());
 				total += (aFileLen + 1023) / 1024; //
-				while (aFileSize.length() < 12)
+				while (aFileSize.length() < 12) {
 					aFileSize = " " + aFileSize;
-				String aFileDate = Acme.Utils.lsDateStr(new Date(aFile.lastModified()));
-				while (aFileDate.length() < 14)
+				}
+				
+				String aFileDate = Utils.lsDateStr(new Date(aFile.lastModified()));
+				while (aFileDate.length() < 14) {
 					aFileDate += " ";
+				}
+				
 				String aFileDirsuf = (aFile.isDirectory() ? "/" : "");
 				String aFileSuf = (aFile.isDirectory() ? "/" : "");
 				// TODO HTML encode file name
-				p.println(aFileType + aFileRead + aFileWrite + aFileExe + "  " + aFileSize + "  " + aFileDate + "  " + "<A HREF=\"" + URLEncoder.encode(names[i], charSet) /*
-																																											 * 1.
-																																											 * 4
-																																											 */
-								+ aFileDirsuf + "\">" + Utils.htmlEncode(names[i], false) + aFileSuf + "</A>");
+				/* 1. 4 */
+				p.println(aFileType + aFileRead + aFileWrite + aFileExe + "  " + aFileSize + "  " + aFileDate + "  " + "<A HREF=\"" + URLEncoder.encode(names[i], charSet) + aFileDirsuf + "\">" + Utils.htmlEncode(names[i], false) + aFileSuf + "</A>");
 			}
-			if (total != 0)
+			
+			if (total != 0) {
 				total += 3;
+			}
+			
 			p.println("total " + total);
 			p.println("</PRE>");
 			p.println("<HR>");
@@ -442,20 +448,23 @@ public class FileServlet extends HttpServlet {
 		if (pl > 0 && path.charAt(pl - 1) != '/') {
 			// relative redirect
 			int sp = path.lastIndexOf('/');
-			if (sp < 0)
+			if (sp < 0) {
 				path += '/';
-			else
+			} else {
 				path = path.substring(sp + 1) + '/';
+			}
 			log("redirecting dir " + path);
 			res.sendRedirect(path);
 			return true;
 		}
+		
 		return false;
 	}
 	
 	// @Override
 	public void log(String msg) {
-		if (logenabled)
+		if (logenabled) {
 			super.log(msg);
+		}
 	}
 }

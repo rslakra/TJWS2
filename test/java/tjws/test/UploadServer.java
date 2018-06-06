@@ -27,21 +27,21 @@ public class UploadServer {
 	
 	@OnMessage
 	public void savePart(byte[] part, Session ses) {
-		if (uploadFile == null) {
-			if (fileName != null)
+		if(uploadFile == null) {
+			if(fileName != null)
 				try {
 					uploadFile = new RandomAccessFile(fileName, "rw");
-				} catch (FileNotFoundException e) {
+				} catch(FileNotFoundException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 					return;
 				}
 		}
-		if (uploadFile != null)
+		if(uploadFile != null)
 			try {
 				uploadFile.write(part);
 				System.err.printf("Stored part of %db%n", part.length);
-			} catch (IOException e) {
+			} catch(IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
@@ -49,10 +49,10 @@ public class UploadServer {
 	
 	@OnMessage
 	public void processCmd(CMD cmd, Session ses, @PathParam("file") String uploadDir) {
-		switch (cmd.cmd) {
+		switch(cmd.cmd) {
 			case 1: // start
 				fileName = cmd.data;
-				if (uploadDir != null && uploadDir.isEmpty() == false) {
+				if(uploadDir != null && uploadDir.isEmpty() == false) {
 					// assure dir
 					new File(uploadDir).mkdirs();
 					fileName = uploadDir + File.separatorChar + fileName;
@@ -69,10 +69,10 @@ public class UploadServer {
 	
 	@OnClose
 	public void close(Session ses) {
-		if (uploadFile != null) {
+		if(uploadFile != null) {
 			try {
 				uploadFile.close();
-			} catch (IOException e) {
+			} catch(IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
