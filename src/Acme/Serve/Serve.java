@@ -5491,10 +5491,18 @@ public class Serve implements ServletContext, Serializable {
 			write(b, 0, b.length);
 		}
 		
-		public void write(byte[] b, int off, int len) throws IOException {
+		/**
+		 * 
+		 * @param dataBytes
+		 * @param off
+		 * @param len
+		 * @throws IOException
+		 * @see java.io.OutputStream#write(byte[], int, int)
+		 */
+		public void write(byte[] dataBytes, int off, int len) throws IOException {
 			if (closed) {
 				if (STREAM_DEBUG) {
-					System.err.println((b == null ? "null" : new String(b, off, len)) + "\n won't be written, stream closed.");
+					System.err.println((dataBytes == null ? "null" : new String(dataBytes, off, len)) + "\n won't be written, stream closed.");
 				}
 				throw new IOException("An attempt of writing " + len + " bytes to a closed out.");
 			}
@@ -5505,8 +5513,8 @@ public class Serve implements ServletContext, Serializable {
 			
 			// write connection headers.
 			serveConnection.writeHeaders();
-			b = buffer.put(b, off, len);
-			len = b.length;
+			dataBytes = buffer.put(dataBytes, off, len);
+			len = dataBytes.length;
 			if (len == 0) {
 				return;
 			}
@@ -5517,12 +5525,12 @@ public class Serve implements ServletContext, Serializable {
 				// no encoding Ok
 				outputStream.write((hexl + "\r\n").getBytes());
 				longBytes += 2 + hexl.length();
-				outputStream.write(b, off, len);
+				outputStream.write(dataBytes, off, len);
 				longBytes += len;
 				outputStream.write("\r\n".getBytes());
 				longBytes += 2;
 			} else {
-				outputStream.write(b, off, len);
+				outputStream.write(dataBytes, off, len);
 				longBytes += len;
 			}
 			
@@ -5530,7 +5538,7 @@ public class Serve implements ServletContext, Serializable {
 				if (chunked) {
 					System.err.println(Integer.toHexString(len));
 				}
-				System.err.print(new String(b, off, len));
+				System.err.print(new String(dataBytes, off, len));
 				if (chunked) {
 					System.err.println();
 				}
@@ -5709,6 +5717,11 @@ public class Serve implements ServletContext, Serializable {
 			return new Object[] { result, INT_ZERO };
 		}
 		
+		/**
+		 * 
+		 * @param value
+		 * @return
+		 */
 		public synchronized Object[] remove(Object value) {
 			Object[] result = remove(rootNode, value);
 			if (result[0] == null) {
@@ -5721,14 +5734,26 @@ public class Serve implements ServletContext, Serializable {
 			return result;
 		}
 		
+		/**
+		 * 
+		 * @param path
+		 * @return
+		 */
 		public synchronized Object[] remove(String path) {
 			Object[] result = get(path);
 			if (result[0] != null) {
 				return remove(result[0]);
 			}
+			
 			return result;
 		}
 		
+		/**
+		 * 
+		 * @param node
+		 * @param value
+		 * @return
+		 */
 		public Object[] remove(Node node, Object value) {
 			// TODO make full path, not only last element
 			if (node == null) {
@@ -5870,19 +5895,25 @@ public class Serve implements ServletContext, Serializable {
 			}
 			addSiblingNames(rootNode, result, "");
 			if (ext != null) {
-				Enumeration e = ext.keys();
-				while (e.hasMoreElements()) {
-					result.addElement("*" + e.nextElement());
+				Enumeration itr = ext.keys();
+				while (itr.hasMoreElements()) {
+					result.addElement("*" + itr.nextElement());
 				}
 			}
 			
 			return result.elements();
 		}
 		
+		/**
+		 * 
+		 * @param node
+		 * @param result
+		 * @param path
+		 */
 		public void addSiblingNames(Node node, Vector result, String path) {
-			Enumeration e = node.keys();
-			while (e.hasMoreElements()) {
-				String pc = (String) e.nextElement();
+			Enumeration itr = node.keys();
+			while (itr.hasMoreElements()) {
+				String pc = (String) itr.nextElement();
 				Node childNode = (Node) node.get(pc);
 				pc = path + '/' + (pc.length() == 0 ? "*" : pc);
 				if (childNode.object != null) {
@@ -5903,10 +5934,15 @@ public class Serve implements ServletContext, Serializable {
 			return result.elements();
 		}
 		
+		/**
+		 * 
+		 * @param node
+		 * @param result
+		 */
 		public void addSiblingObjects(Node node, Vector<Object> result) {
-			Enumeration e = node.keys();
-			while (e.hasMoreElements()) {
-				Node childNode = (Node) node.get(e.nextElement());
+			Enumeration itr = node.keys();
+			while (itr.hasMoreElements()) {
+				Node childNode = (Node) node.get(itr.nextElement());
 				if (childNode.object != null) {
 					result.addElement(childNode.object);
 				}
@@ -6280,7 +6316,8 @@ public class Serve implements ServletContext, Serializable {
 		 */
 		static AcmeSession restore(BufferedReader r, int inactiveInterval, ServletContext servletContext, HttpSessionContext sessionContext) throws IOException {
 			String s = r.readLine();
-			if (s == null) {// eos
+			if (s == null) {
+				// eos
 				return null;
 			}
 			
