@@ -45,9 +45,6 @@ import com.rslakra.android.framework.events.EventType;
 import com.rslakra.android.logger.LogHelper;
 import com.rslakra.android.logger.LogType;
 import com.rslakra.android.server.TJWSService;
-import com.rslakra.logger.LogManager;
-
-import org.apache.log4j.Level;
 
 import java.io.File;
 
@@ -187,13 +184,14 @@ public class TJWSApp extends Application {
             }
         }
         
-        if(Thread.getDefaultUncaughtExceptionHandler() == null)
+        if(Thread.getDefaultUncaughtExceptionHandler() == null) {
             Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
                 
                 public void uncaughtException(Thread thread, Throwable ex) {
                     LogHelper.e(LOG_TAG, "Unhandled exception " + ex + " in the thread: " + thread, ex);
                 }
             });
+        }
         
         
         // initialize logger
