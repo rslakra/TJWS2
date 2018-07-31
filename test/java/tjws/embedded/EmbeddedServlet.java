@@ -32,6 +32,9 @@
 package tjws.embedded;
 
 import java.io.IOException;
+import java.util.Enumeration;
+import java.util.Map;
+import java.util.TreeMap;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -102,6 +105,10 @@ public class EmbeddedServlet extends HttpServlet {
 	 */
 	private void process(HttpServletRequest servletRequest, HttpServletResponse servletResponse) throws ServletException, IOException {
 		try {
+			final Map<String, String> requestHeaders = getRequestHeaders(servletRequest);
+			if (requestHeaders != null && requestHeaders.size() > 0) {
+				LogManager.info("requestHeaders:" + requestHeaders);
+			}
 			String pathSegment = servletRequest.getRequestURI();
 			if (pathSegment.endsWith("/") || pathSegment.endsWith("html")) {
 				byte[] dataBytes = IOHelper.readBytes(EmbeddedServlet.class.getResourceAsStream("web/index.html"), true);
@@ -121,5 +128,37 @@ public class EmbeddedServlet extends HttpServlet {
 		} catch (Exception ex) {
 			LogManager.error(ex);
 		}
+	}
+	
+	/**
+	 * Returns the request headers as the <code>Map<String, Object></code>
+	 * object after sorts based on the name.
+	 *
+	 * @param servletRequest
+	 * @return
+	 * @throws IOException
+	 */
+	public static Map<String, String> getRequestHeaders(final HttpServletRequest servletRequest) {
+		Map<String, String> requestHeaders = new TreeMap<String, String>();
+		if (servletRequest != null) {
+			try {
+				/* extract request headers, if available. */
+				final Enumeration<String> headerNames = servletRequest.getHeaderNames();
+				if (headerNames != null) {
+					while (headerNames.hasMoreElements()) {
+						String headerName = headerNames.nextElement();
+						String headerValue = servletRequest.getHeader(headerName);
+						LogManager.info("headerName:" + headerName + ", headerValue:" + headerValue);
+						requestHeaders.put(headerName, headerValue);
+					}
+				} else {
+					LogManager.info("No headers available in the servletRequest:" + servletRequest);
+				}
+			} catch (Exception ex) {
+				ex.printStackTrace();
+			}
+		}
+		
+		return requestHeaders;
 	}
 }

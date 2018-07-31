@@ -45,6 +45,9 @@ import com.rslakra.android.framework.events.EventType;
 import com.rslakra.android.logger.LogHelper;
 import com.rslakra.android.logger.LogType;
 import com.rslakra.android.server.TJWSService;
+import com.rslakra.logger.LogManager;
+
+import org.apache.log4j.Level;
 
 import java.io.File;
 
@@ -192,7 +195,6 @@ public class TJWSApp extends Application {
                 }
             });
         }
-        
         
         // initialize logger
         LogHelper.log4jConfigure(getInstance().getLogsFolder(), LogType.DEBUG);

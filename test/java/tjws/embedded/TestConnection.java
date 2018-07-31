@@ -51,6 +51,8 @@ import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 
+import org.apache.log4j.Level;
+
 import com.rslakra.logger.LogManager;
 
 import Acme.IOHelper;
@@ -238,6 +240,7 @@ public final class TestConnection {
 	 * @param args
 	 */
 	public static void main(String[] args) {
+		LogManager.setLogLevel(Level.DEBUG);
 		TestConnection testConnection = new TestConnection(true);
 		testConnection.testSSLConnection();
 	}
