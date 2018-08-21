@@ -36,6 +36,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.security.KeyStore;
@@ -221,6 +222,21 @@ public final class TestConnection {
 				
 				// Install the SSL socket factory on the connection.
 				((HttpsURLConnection) urlConnection).setSSLSocketFactory(sslSocketFactory);
+			}
+			
+			// send JSON payload to reqeust
+			final boolean sendJSONPayload = false;
+			if (sendJSONPayload) {
+				final String jsonPayload = "{\"answers\":{\"UserName\":\"admin@wutang\",\"Answers\":[{\"QuestionId\":\"80148\",\"Answer\":\"city\"},{\"QuestionId\":\"80149\",\"Answer\":\"name\"}]},\"rememberMe\":false}";
+				// urlConnection.setConnectTimeout(5000);
+				urlConnection.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
+				urlConnection.setDoOutput(true);
+				urlConnection.setDoInput(true);
+				urlConnection.setRequestMethod("POST");
+				
+				final OutputStream out = urlConnection.getOutputStream();
+				out.write(jsonPayload.getBytes("UTF-8"));
+				out.close();
 			}
 			
 			bReader = new BufferedReader(new InputStreamReader(urlConnection.getInputStream()));

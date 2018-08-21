@@ -31,7 +31,10 @@
 // http://tjws.sourceforge.net
 package tjws.embedded;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.Enumeration;
 import java.util.Map;
 import java.util.TreeMap;
@@ -104,15 +107,14 @@ public class EmbeddedServlet extends HttpServlet {
 	 * @throws IOException
 	 */
 	private void process(HttpServletRequest servletRequest, HttpServletResponse servletResponse) throws ServletException, IOException {
+		LogManager.info("process(" + servletRequest + ", " + servletResponse + ")");
 		try {
-			final Map<String, String> requestHeaders = getRequestHeaders(servletRequest);
-			if (requestHeaders != null && requestHeaders.size() > 0) {
-				LogManager.info("requestHeaders:" + requestHeaders);
-			}
+			logServletRequest(servletRequest);
 			String pathSegment = servletRequest.getRequestURI();
 			if (pathSegment.endsWith("/") || pathSegment.endsWith("html")) {
 				byte[] dataBytes = IOHelper.readBytes(EmbeddedServlet.class.getResourceAsStream("web/index.html"), true);
-				LogManager.info("dataBytes:\n" + IOHelper.toUTF8String(dataBytes) + "\n");
+				// LogManager.info("dataBytes:\n" +
+				// IOHelper.toUTF8String(dataBytes) + "\n");
 				IOHelper.sendResponse(IOHelper.CONTENT_TYPE_HTML, dataBytes, servletResponse);
 			} else if (pathSegment.endsWith("favicon.ico")) {
 				IOHelper.sendResponse(IOHelper.CONTENT_TYPE_ICON, IOHelper.readIconBytes(), servletResponse);
@@ -160,5 +162,120 @@ public class EmbeddedServlet extends HttpServlet {
 		}
 		
 		return requestHeaders;
+	}
+	
+	/**
+	 * Returns the request parameters.
+	 * 
+	 * @param servletRequest
+	 * @return
+	 */
+	public static void logRequestParameters(final HttpServletRequest servletRequest) {
+		LogManager.info("+logRequestParameters(" + servletRequest + ")");
+		if (servletRequest != null) {
+			try {
+				/* extract request headers, if available. */
+				final Enumeration<String> paramNames = servletRequest.getParameterNames();
+				if (paramNames != null) {
+					while (paramNames.hasMoreElements()) {
+						StringBuilder paramBuilder = new StringBuilder();
+						String paramName = paramNames.nextElement();
+						paramBuilder.append(paramName).append("=");
+						String[] paramValues = servletRequest.getParameterValues(paramName);
+						for (int i = 0; i < paramValues.length; i++) {
+							paramBuilder.append(paramValues[i]);
+							if (i < paramValues.length - 1) {
+								paramBuilder.append(", ");
+							}
+						}
+						LogManager.info(paramBuilder.toString());
+					}
+				} else {
+					LogManager.info("No parameters available in the servletRequest:" + servletRequest);
+				}
+			} catch (Exception ex) {
+				ex.printStackTrace();
+			}
+		}
+		LogManager.info("-logRequestParameters()");
+	}
+	
+	/**
+	 * Returns the payload of the request.
+	 * 
+	 * @param servletRequest
+	 * @return
+	 * @throws IOException
+	 */
+	public static String getPayload(final HttpServletRequest servletRequest) {
+		final StringBuilder buffer = new StringBuilder();
+		String line = null;
+		BufferedReader reader = null;
+		try {
+			reader = servletRequest.getReader();
+			while ((line = reader.readLine()) != null) {
+				buffer.append(line);
+			}
+		} catch (IOException ex) {
+			ex.printStackTrace();
+		} finally {
+			IOHelper.closeSilently(reader);
+		}
+		
+		return buffer.toString();
+	}
+	
+	/**
+	 * 
+	 * @param servletRequest
+	 * @return
+	 * @throws IOException
+	 */
+	public static String getBody(final HttpServletRequest servletRequest) {
+		String body = null;
+		final StringBuilder stringBuilder = new StringBuilder();
+		BufferedReader bReader = null;
+		try {
+			InputStream inputStream = servletRequest.getInputStream();
+			if (inputStream != null) {
+				bReader = new BufferedReader(new InputStreamReader(inputStream));
+				char[] charBuffer = new char[128];
+				int bytesRead = -1;
+				while ((bytesRead = bReader.read(charBuffer)) > 0) {
+					stringBuilder.append(charBuffer, 0, bytesRead);
+				}
+			} else {
+				stringBuilder.append("");
+			}
+		} catch (IOException ex) {
+			System.err.println(ex);
+		} finally {
+			IOHelper.closeSilently(bReader);
+			body = stringBuilder.toString();
+		}
+		
+		return body;
+	}
+	
+	/**
+	 * 
+	 * @param servletRequest
+	 */
+	public static void logServletRequest(final HttpServletRequest servletRequest) {
+		LogManager.info("+logServletRequest(" + servletRequest + ")");
+		
+		final Map<String, String> requestHeaders = getRequestHeaders(servletRequest);
+		if (requestHeaders != null && requestHeaders.size() > 0) {
+			LogManager.info("requestHeaders:" + requestHeaders);
+		}
+		
+		logRequestParameters(servletRequest);
+		
+		String payload = null;
+		// payload = getPayload(servletRequest);
+		// payload = getBody(servletRequest);
+		LogManager.info("payload:" + payload);
+		
+		LogManager.info("-logServletRequest()");
 	}
 }
