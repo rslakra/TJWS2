@@ -6639,7 +6639,7 @@ public class Serve implements ServletContext, Serializable {
 	 * @version 1.0.0
 	 * @since 1.0.0
 	 */
-	protected static class LocaleWithWeight implements Comparable {
+	protected static class LocaleWithWeight implements Comparable<LocaleWithWeight> {
 		// should be int
 		protected float weight;
 		protected Locale locale;
@@ -6649,14 +6649,28 @@ public class Serve implements ServletContext, Serializable {
 			this.weight = weight;
 		}
 		
-		public int compareTo(Object object) {
-			if (object instanceof LocaleWithWeight) {
-				return (int) (((LocaleWithWeight) object).weight - weight) * 100;
-			}
-			
-			throw new IllegalArgumentException();
+		/**
+		 * 
+		 * @param other
+		 * @return
+		 * @see java.lang.Comparable#compareTo(java.lang.Object)
+		 */
+		public int compareTo(LocaleWithWeight other) {
+			return (int) (other.weight - weight) * 100;
 		}
 		
+		/**
+		 * 
+		 * @return
+		 */
+		public float getWeight() {
+			return this.weight;
+		}
+		
+		/**
+		 * 
+		 * @return
+		 */
 		public Locale getLocale() {
 			return locale;
 		}
